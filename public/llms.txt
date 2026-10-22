@@ -1,0 +1,8 @@
+---
+title: Aibotq.dev — The AI Agent Framework for the Web
+description: Aibotq.dev is the full-stack AI agent framework for the web.
+url: "https://aibotq.dev/"
+docs_index: /docs/llms.txt
+content_index: /llms.txt
+latest_version: 2.0.0
+---
