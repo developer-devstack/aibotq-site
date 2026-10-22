@@ -104,3 +104,4 @@ footer{border-top:1px solid var(--border);padding:64px 0 40px}
 .tgrid.s2{grid-template-columns:repeat(2,1fr);gap:16px}.tgrid.s2 .th{height:120px;font-size:32px}
 .note{text-align:center;color:var(--t2);margin-top:64px}.note a{color:var(--cyan);font-weight:600}
 @media(max-width:900px){.links,.search{display:none}.hero{padding:64px 0}.hero .wrap,.dive .wrap,.two{grid-template-columns:1fr}.dive.flip .wrap>div:first-child{order:0}.bento,.tgrid,.quotes,.tgrid.s2{grid-template-columns:1fr}.bento .big{grid-column:auto}.stats .wrap{grid-template-columns:repeat(2,1fr);row-gap:32px}.stats div:nth-child(2){border:0}.fcols{grid-template-columns:1fr 1fr}.row{flex-direction:column;align-items:start;gap:12px}.right .btn{display:none}.logos{justify-content:center}}
+html{overflow-x:clip}.hero .wrap>*,.bento>*,.dive .wrap>*,.two>*{min-width:0}
