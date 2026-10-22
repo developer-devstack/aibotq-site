@@ -2,36 +2,87 @@
 <title>New Project — Aibotq.dev</title><meta name="description" content="Aibotq.dev is the full-stack AI agent framework for the web — build, deploy, and scale chatbots &amp; agents with routing, streaming, RAG, tool-calling, and one-click deploy.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF5A1F'/%3E%3Cpath d='M18 4 8 18h7l-2 10 10-14h-7z' fill='%2307080C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:ital,wght@1,700;1,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"><script>try{document.documentElement.dataset.theme=localStorage.theme||'dark'}catch(e){}</script></head><body>
+<link rel="stylesheet" href="/style.css"><script>try{document.documentElement.dataset.theme=localStorage.theme||'dark'}catch(e){}</script><style>
+.np2{position:relative;padding:40px 0 80px;overflow:hidden}
+.np2:before{content:"";position:absolute;inset:-200px -10% auto;height:620px;background:radial-gradient(600px 300px at 70% 20%,rgba(34,229,255,.16),transparent 70%),radial-gradient(400px 200px at 15% 10%,rgba(255,90,31,.12),transparent 70%);pointer-events:none}
+.np2:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(34,229,255,.035) 46px 48px);mask:linear-gradient(#000,transparent 50%);pointer-events:none}
+.np2 .wrap{position:relative;z-index:1}
+.lk2{color:var(--t2);font-size:14px}.btn.sm{padding:7px 16px;font-size:14px}.btn.g{background:transparent}
+.track{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:40px}
+.back{color:var(--t2);font-size:14px}.back:hover{color:var(--cyan)}
+.steps{display:flex;flex:1;gap:0;min-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;transform:skewX(-12deg)}
+.st{flex:1;display:flex;align-items:center;gap:10px;justify-content:center;padding:8px 12px;border-radius:999px;color:var(--t3);font:600 13px Inter;cursor:pointer}
+.st>*{transform:skewX(12deg)}.st i{font:500 12px "JetBrains Mono";width:22px;height:22px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--border);font-style:normal}
+.st.on{background:linear-gradient(90deg,rgba(255,90,31,.22),rgba(34,229,255,.18));color:var(--t1);box-shadow:inset 0 0 0 1px rgba(34,229,255,.35)}.st.on i{background:var(--orange);color:#07080C;border:0;box-shadow:0 0 12px var(--orange)}
+.st.done i{background:var(--lime);color:#07080C;border:0}
+.kick{font:500 12px "JetBrains Mono";color:var(--cyan);letter-spacing:.12em;text-transform:uppercase}
+.np2 h1{font-size:clamp(40px,6vw,76px);margin:12px 0 14px}.np2 h1 em{background:linear-gradient(90deg,var(--cyan),#fff);-webkit-background-clip:text;color:transparent;padding-right:.1em}
+.np2 .lead{color:var(--t2);max-width:620px;margin-bottom:40px}
+.opts{display:grid;grid-template-columns:1fr 1.25fr;gap:24px}
+.pan{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden}
+.pan:before{content:"";position:absolute;left:0;top:0;height:3px;width:120px;background:linear-gradient(90deg,var(--orange),transparent);transform:skewX(-30deg)}
+.pan h2{font-size:28px}.pan .ds{color:var(--t2);font-size:14px;margin:6px 0 20px}
+.gh{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:12px;background:#F4F6FA;color:#07080C;font-weight:700;border:0;cursor:pointer;font-size:15px}
+.gh:hover{box-shadow:0 0 24px rgba(34,229,255,.4)}
+.alt{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.alt button{padding:12px;border-radius:12px;background:transparent;border:1px solid var(--border);color:var(--t1);font-weight:600;cursor:pointer}.alt button:hover{border-color:var(--cyan)}
+.lock{display:flex;gap:8px;color:var(--t3);font-size:12px;margin:14px 0}
+.or{display:flex;align-items:center;gap:12px;color:var(--t3);font:12px "JetBrains Mono";margin:18px 0}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--border)}
+.fl{font-size:13px;color:var(--t2);display:block;margin-bottom:8px}
+.url{display:flex;gap:8px}.url input{flex:1;min-width:0;background:var(--code);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--t1);font:13px "JetBrains Mono"}.url input:focus{outline:0;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,229,255,.15)}
+.url button{border-radius:10px;padding:0 16px;border:0;background:var(--orange);color:#07080C;font-weight:700;cursor:pointer}
+.hint{font-size:12px;color:var(--t3);margin-top:8px}.hint.err{color:var(--orange)}
+.drop2{display:block;margin-top:18px;border:1px dashed rgba(34,229,255,.3);border-radius:12px;padding:16px;text-align:center;color:var(--t2);font-size:13px;cursor:pointer}.drop2.over{background:rgba(34,229,255,.06)}
+.tpl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tc2{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);transition:.2s;display:block;position:relative}
+.tc2:hover{border-color:var(--cyan);transform:translateY(-3px);box-shadow:0 10px 30px rgba(34,229,255,.12)}
+.pv{height:120px;background:linear-gradient(135deg,#0d1119,#151a26);position:relative;padding:12px;overflow:hidden}
+.pv:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(34,229,255,.2),transparent 60%)}
+.dot{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.em{width:44px;height:44px;border-radius:10px;background:var(--orange);display:grid;place-items:center;color:#07080C;font:800 italic 22px "Inter Tight";transform:skewX(-8deg)}
+.bub{font-size:10px;padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.06);margin-bottom:6px;width:fit-content;max-width:90%}.bub.a{background:rgba(34,229,255,.12);color:var(--cyan)}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.pg span{height:50px;border-radius:6px;background:linear-gradient(160deg,rgba(255,90,31,.35),rgba(34,229,255,.15))}
+.tm2{padding:14px}.tm2 b{display:block;font-size:15px}.tm2 p{color:var(--t2);font-size:12px;margin:4px 0 10px}.tm2 small{font:11px "JetBrains Mono";color:var(--lime);border:1px solid rgba(204,255,0,.25);padding:2px 8px;border-radius:999px}
+.arr{position:absolute;right:12px;bottom:14px;color:var(--t3)}.tc2:hover .arr{color:var(--cyan)}
+.browse{display:inline-flex;gap:6px;margin-top:18px;color:var(--cyan);font-size:14px;font-weight:600}
+.guide{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px;padding:20px 24px;border-radius:16px;border:1px solid var(--border);background:linear-gradient(90deg,rgba(204,255,0,.05),transparent)}
+.guide b{display:block}.guide p{color:var(--t2);font-size:14px}
+.sbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding:24px 0;color:var(--t3);font-size:13px}.sbar a{margin-left:18px}.sbar a:hover{color:var(--t1)}
+@media(max-width:900px){.opts{grid-template-columns:1fr}.tpl{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.tpl{grid-template-columns:1fr}.steps{transform:none}.st>*{transform:none}.st span{display:none}.st.on span{display:inline}.lk2,.search,nav.top .links{display:none}.alt{grid-template-columns:1fr}.url{flex-direction:column}.url button{padding:12px}nav.top .right .btn{display:inline-flex;padding:6px 12px;font-size:13px}nav.top .right .icon{display:none}nav.top .logo{font-size:18px}}
+</style></head><body>
 <nav class="top"><div class="wrap">
 <a href="/" class="logo d" aria-label="aibotq.dev home"><span class="bolt">⚡</span><span>aibotq<span class="dev">.dev</span></span></a>
 <div class="links"><a href="/#docs">Docs</a><a href="/#templates">Templates</a><a href="/#showcase">Showcase</a><a href="/#blog">Blog</a><a href="/#pricing">Pricing</a></div>
 <div class="right"><div class="search" role="button">Search… <kbd>⌘K</kbd></div>
 <a class="icon" href="https://github.com" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.3 4.8 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></svg></a>
 <button class="icon" id="theme" aria-label="Toggle theme">☀</button>
-<a class="btn p sm" href="/new/">Deploy</a></div></div></nav>
-<main class="np"><div class="wrap"><h1 class="d">Let's build something new.</h1><p class="lead">Start from a quick-start, import a repository, or drop in your project.</p>
-<div class="chips" data-group><button class="chip on">AI Chatbot</button><button class="chip">Image Generator</button><button class="chip">Voice Agent</button><button class="chip">RAG Docs Bot</button><button class="chip">Agent Workflow</button><button class="chip">Finance Analyst Bot</button></div>
-<label class="drop" id="drop"><input type="file" hidden webkitdirectory multiple id="file"><div style="font-size:28px;color:var(--cyan)">⇪</div><span id="droptxt">You can also drag and drop your project, or <u>choose a file or a folder</u>.</span></label>
-<div class="two"><div class="card"><h2 class="d">Import Git Repository</h2><div class="acct">⌥ &nbsp;devstack-labs ▾</div>
-<div class="repo"><span style="flex:0;color:var(--t2)">◉</span><b>orbit-agent</b><span>· 2d ago</span><button>Import</button></div>
-<div class="repo"><span style="flex:0;color:var(--t2)">◉</span><b>quanta-chat</b><span>· 5d ago</span><button>Import</button></div>
-<div class="repo"><span style="flex:0;color:var(--t2)">◉</span><b>nebula-rag</b><span>· 1w ago</span><button>Import</button></div>
-<div class="repo"><span style="flex:0;color:var(--t2)">◉</span><b>pulse-voice</b><span>· 2w ago</span><button>Import</button></div>
-<div class="repo"><span style="flex:0;color:var(--t2)">◉</span><b>vector-forge</b><span>· 1mo ago</span><button>Import</button></div>
-<p style="font-size:13px;color:var(--t3);margin-top:16px">Connect a Git provider</p><div class="prov"><a href="#">● Continue with GitHub</a><a href="#"><span style="color:#FC6D26">●</span> Continue with GitLab</a><a href="#"><span style="color:#2684FF">●</span> Continue with Bitbucket</a></div></div>
-<div><div class="bh"><h2 class="d">Build your solution</h2><a class="lk" href="/#templates">Browse All →</a></div><div class="tabs" data-group><button class="chip on">All</button><button class="chip">Agents</button><button class="chip">Chat</button><button class="chip">Voice</button><button class="chip">RAG</button></div><div class="tgrid s2">
-<a class="tc" href="#"><div class="th">⚡</div><div class="tm"><div>Aibotq Boilerplate<small>TS</small></div><p>Minimal agent + chat UI, ready to ship.</p></div></a>
-<a class="tc" href="#"><div class="th">🐍</div><div class="tm"><div>Python Agent<small>PY</small></div><p>FastAPI agent with tool-calling.</p></div></a>
-<a class="tc" href="#"><div class="th">🎫</div><div class="tm"><div>AI Ticket Router<small>TS</small></div><p>Classify and route support tickets.</p></div></a>
-<a class="tc" href="#"><div class="th">🖼</div><div class="tm"><div>Image Gen Agent<small>TS</small></div><p>Prompt-to-image with queue.</p></div></a>
-<a class="tc" href="#"><div class="th">🎙</div><div class="tm"><div>Voice Agent<small>TS</small></div><p>Realtime speech in and out.</p></div></a>
-<a class="tc" href="#"><div class="th">📚</div><div class="tm"><div>RAG Starter<small>TS</small></div><p>Chat over your docs with citations.</p></div></a>
-</div></div></div><p class="note">Only need Analytics or Evals? <a href="#">Create an empty project.</a></p></div></main>
-<footer><div class="wrap"><div class="fcols"><div><a href="/" class="logo d"><span class="bolt">⚡</span><span>aibotq<span class="dev">.dev</span></span></a></div>
-<div><h4>Product</h4><a href="#">Docs</a><a href="#">Templates</a><a href="#">Pricing</a><a href="#">Changelog</a><a href="#">Enterprise</a></div>
-<div><h4>Resources</h4><a href="#">Guides</a><a href="#">API Reference</a><a href="#">Examples</a><a href="/llms.txt">llms.txt</a><a href="#">Status</a></div>
-<div><h4>Community</h4><a href="#">GitHub</a><a href="#">Discord</a><a href="#">X</a><a href="#">Showcase</a><a href="#">Events</a></div>
-<div><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a><a href="#">Privacy</a><a href="#">Terms</a></div></div>
-<div class="fb"><span class="sp">© 2026 Aibotq.dev</span><span class="soc"><a href="#">X</a><a href="#">GitHub</a><a href="#">Discord</a></span><span class="status"><i class="ld"></i>All systems operational</span></div></div></footer>
-<script src="/app.js"></script></body></html>
+<a class="lk2" href="/#docs">Docs</a><a class="btn g sm" id="login" href="#login">Log in</a><a class="btn p sm" id="signup" href="#signup">Sign up</a></div></div></nav><main class="np2"><div class="wrap">
+<div class="track"><a class="back" href="/">← Back</a><div class="steps" id="steps"><div class="st on"><i>1</i><span>Connect source</span></div><div class="st"><i>2</i><span>Configure agent</span></div><div class="st"><i>3</i><span>Deploy to edge</span></div></div></div>
+<div class="kick">// new project · pit lane</div>
+<h1 class="d">Launch your next <em>agent.</em></h1>
+<p class="lead">Connect a Git repository or start from a tuned template. Every push ships to the edge with a preview URL — zero config, full throttle.</p>
+<div class="opts">
+<section class="pan"><h2 class="d">Import Git repository</h2><p class="ds">Pick a provider to list your repositories.</p>
+<button class="gh" data-provider="github"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.3 4.8 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></svg>Continue with GitHub</button>
+<div class="alt"><button data-provider="gitlab"><span style="color:#FC6D26">◆</span> GitLab</button><button data-provider="bitbucket"><span style="color:#2684FF">◆</span> Bitbucket</button></div>
+<div class="lock">🔒 We only request access to repositories you choose. Revoke any time.</div>
+<div class="or">OR</div>
+<label class="fl" for="repourl">Public repository URL</label>
+<form class="url" id="urlform"><input id="repourl" placeholder="https://github.com/user/repo" autocomplete="off"><button>Continue →</button></form>
+<p class="hint" id="urlhint">Paste any public GitHub, GitLab or Bitbucket URL.</p>
+<label class="drop2" id="drop"><input type="file" hidden webkitdirectory multiple id="file"><span id="droptxt">⇪ Or drop a project folder here</span></label>
+</section>
+<section class="pan"><h2 class="d">Start from a template</h2><p class="ds">Pre-tuned agents. Clone into your GitHub, deploy in one lap.</p>
+<div class="tpl">
+<a class="tc2" href="#" data-template="agent-app"><div class="pv"><div class="em">a</div><i class="dot" style="left:70%;top:30%"></i><i class="dot" style="left:84%;top:60%"></i><i class="dot" style="left:58%;top:74%"></i></div><div class="tm2"><b>Agent App</b><p>Full-stack agent with tools & memory.</p><small>TypeScript</small></div><span class="arr">↗</span></a>
+<a class="tc2" href="#" data-template="ai-chatbot"><div class="pv"><div class="bub">Summarize my inbox</div><div class="bub a">Streaming… 3 threads need you ▍</div><div class="bub" style="opacity:.5">Ask anything…</div></div><div class="tm2"><b>AI Chatbot</b><p>Streaming chat UI, any model.</p><small>Next.js</small></div><span class="arr">↗</span></a>
+<a class="tc2" href="#" data-template="commerce-agent"><div class="pv"><div style="height:8px;width:60%;border-radius:4px;background:rgba(255,255,255,.1)"></div><div class="pg"><span></span><span></span><span></span></div></div><div class="tm2"><b>Commerce Agent</b><p>Shop assistant over your catalog.</p><small>RAG</small></div><span class="arr">↗</span></a>
+</div><a class="browse" href="/#templates">Browse all templates →</a></section>
+</div>
+<div class="guide"><div style="display:flex;gap:14px;align-items:center"><span style="font-size:22px;color:var(--lime)">⑂</span><div><b>Git push = deploy</b><p>Main ships to production. Every pull request gets its own preview URL.</p></div></div><a class="btn g sm" href="/#docs">Read deployment docs ↗</a></div>
+<div class="sbar"><span>© 2026 Aibotq.dev</span><span><a href="#">Help</a><a href="#">Privacy</a><a href="#">Terms</a></span></div>
+</div></main>
+<script src="/app.js"></script><script>
+document.querySelectorAll('[data-provider],[data-template],#login,#signup').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();const h=document.getElementById('urlhint');h.className='hint err';h.textContent='Sign-in and deploy are not live yet — coming soon.';h.scrollIntoView({block:'center',behavior:'smooth'})}));
+document.getElementById('urlform').addEventListener('submit',e=>{e.preventDefault();const v=document.getElementById('repourl').value.trim(),h=document.getElementById('urlhint');h.className='hint err';h.textContent=/^https:\/\/(github|gitlab|bitbucket)\.(com|org)\/[\w.-]+\/[\w.-]+\/?$/.test(v)?'Valid URL. Import pipeline is not live yet — coming soon.':'Enter a valid repository URL, e.g. https://github.com/user/repo'});
+</script></body></html>
