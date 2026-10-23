@@ -22,9 +22,9 @@ nav.top:after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:1
 nav.top .wrap{display:flex;align-items:center;height:100%;gap:16px}
 .logo{display:flex;align-items:center;gap:8px;font-size:22px}
 .bolt{display:inline-block;width:1.45em;height:1.45em;background:url(/logo-mark.svg) center/contain no-repeat;font-size:inherit;color:transparent;overflow:hidden;text-indent:-99em;filter:drop-shadow(0 0 10px rgba(34,229,255,.35)) drop-shadow(0 0 14px rgba(255,90,31,.25));flex:none}
-.logo>span:last-child{background:linear-gradient(100deg,var(--t1) 55%,var(--cyan));-webkit-background-clip:text;background-clip:text}
-.logo .dev{-webkit-text-fill-color:var(--cyan);text-shadow:0 0 14px rgba(34,229,255,.45)}
-.logo .dev{color:var(--cyan)}
+.logo>span:last-child{font-style:normal;color:var(--t1);background:none}
+.logo .dev{font-style:normal;-webkit-text-fill-color:var(--orange);text-shadow:0 0 14px rgba(255,90,31,.4)}
+.logo .dev{color:var(--orange)}
 .links{display:flex;gap:4px;margin:0 auto}.links a{color:var(--t2);font-size:14px;font-weight:500;padding:8px 12px;border-radius:8px;transition:.15s}.links a:hover,.links a.on{color:var(--t1);background:var(--surface)}
 .right{display:flex;align-items:center;gap:10px}
 .search{display:flex;gap:20px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 14px;color:var(--t3);font:14px Inter,sans-serif;cursor:pointer;transition:.2s}.search:hover{border-color:var(--border2);color:var(--t2)}.search kbd{font-size:12px;color:var(--t2)}
