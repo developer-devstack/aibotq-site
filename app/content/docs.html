@@ -1,9 +1,4 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Docs — Aibotq.dev</title><meta name="description" content="How to connect a source, configure, and deploy on Aibotq.dev — plus the build-pipeline contract, JSON API and self-hosting setup.">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"><script>try{document.documentElement.dataset.theme=localStorage.theme||'dark'}catch(e){}</script></head>
-<body data-page="docs"><div id="site-nav"></div>
+<div id="site-nav"></div>
 <main class="page"><div class="wrap">
 <div class="ph"><span class="eyebrow">// docs</span><h1 class="d">Docs</h1><p>From repository to live URL in three steps, and everything underneath: webhooks, the signed build-pipeline contract, the JSON API and self-hosting.</p></div>
 <div class="docs">
@@ -99,6 +94,5 @@ npx wrangler deploy</code></pre></div>
 <p>Register a GitHub OAuth App with the callback URL <code>https://aibotq.dev/api/auth/github/callback</code> (use your own domain). Optionally create an R2 bucket (<code>npx wrangler r2 bucket create aibotq-uploads</code>) and bind it as <code>UPLOADS</code> to enable uploads. For local work put the same names in an untracked <code>.dev.vars</code> file and run <code>npx wrangler dev</code>. Never commit secrets.</p>
 </article></div></div></main>
 <div id="site-footer"></div>
-<script src="/app.js"></script>
-<script>(function(){var l=[].slice.call(document.querySelectorAll('.toc a')),s=l.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))}).filter(Boolean);if(!('IntersectionObserver'in window))return;var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){l.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});s.forEach(function(x){o.observe(x)})})()</script>
-</body></html>
+
+

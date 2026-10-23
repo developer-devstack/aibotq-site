@@ -60,9 +60,3 @@ export async function handle(req: Request, env: Env, ctx: ExecutionContext): Pro
   }
 }
 
-export default {
-  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    if (!new URL(req.url).pathname.startsWith('/api/')) return env.ASSETS.fetch(req);
-    return handle(req, env, ctx);
-  },
-} satisfies ExportedHandler<Env>;
