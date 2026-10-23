@@ -1,0 +1,39 @@
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy — Aibotq.dev</title><meta name="description" content="What data Aibotq.dev stores, why, who it is shared with, and how to remove it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF5A1F'/%3E%3Cpath d='M18 4 8 18h7l-2 10 10-14h-7z' fill='%2307080C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:ital,wght@1,700;1,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"><script>try{document.documentElement.dataset.theme=localStorage.theme||'dark'}catch(e){}</script></head>
+<body data-page="privacy"><div id="site-nav"></div>
+<main class="page"><div class="wrap">
+<div class="ph"><span class="eyebrow">// legal</span><h1 class="d">Privacy</h1><p>Plain-language policy for Aibotq.dev. Short version: we store what is needed to run your deployments, we encrypt your secrets, and we don’t run ads or third-party trackers.</p></div>
+<article class="prose">
+<p class="upd">Last updated: October 2026</p>
+<h2 class="d">What we store</h2>
+<table><thead><tr><th>Data</th><th>Why</th></tr></thead><tbody>
+<tr><td>Your provider profile: id, login, display name, avatar URL</td><td>To sign you in and show who you are.</td></tr>
+<tr><td>Your provider access token (GitHub, and GitLab/Bitbucket if you connect them) — <strong>encrypted</strong> with AES-GCM</td><td>To list your repositories, create repositories from templates, register webhooks and clone private repos for builds. It is never sent to your browser.</td></tr>
+<tr><td>Sessions (a hashed identifier and expiry)</td><td>To keep you signed in for up to 30 days.</td></tr>
+<tr><td>Projects: name, repository, branch, build settings, webhook status</td><td>To run and show your deployments.</td></tr>
+<tr><td>Environment variables — <strong>encrypted</strong>; only names are ever shown back</td><td>To pass them to your builds.</td></tr>
+<tr><td>Deployments: status, step, commit, URL and build log</td><td>To show progress and history.</td></tr>
+<tr><td>Uploaded files, in R2, only if uploads are enabled</td><td>To hand them to the build pipeline.</td></tr>
+<tr><td>Rate-limit counters keyed by your IP address, auto-pruned after about a day</td><td>To limit abuse of sign-in, upload and deploy endpoints.</td></tr></tbody></table>
+
+<h2 class="d">Cookies and local storage</h2>
+<p>Only functional ones: a session cookie (<code>aq_session</code>, HttpOnly, Secure, SameSite=Lax), a short-lived cookie used during OAuth sign-in to prevent forgery, and a <code>theme</code> preference in your browser’s local storage. There are no advertising or analytics cookies. Pages load fonts from Google Fonts, which sees your IP address when it serves them.</p>
+
+<h2 class="d">Who we share data with</h2>
+<ul><li><strong>Your Git provider</strong> (GitHub, GitLab or Bitbucket) — we call its API on your behalf, with your token.</li>
+<li><strong>The build pipeline</strong> that runs your deployments — it receives the repository location, project settings, your environment variables and, for private repositories, a token to clone them.</li>
+<li>Our hosting provider, Cloudflare, which runs the site, database and storage.</li></ul>
+<p>We don’t sell your data.</p>
+
+<h2 class="d">Your choices</h2>
+<ul><li>Revoke Aibotq’s access at any time in GitHub → Settings → Applications (or the equivalent on GitLab/Bitbucket).</li>
+<li>Log out from the account menu; this deletes the session.</li>
+<li>To have your account, projects, variables, deployments and uploads deleted, open an issue at <a href="https://github.com/thanabartbb/aibotq-site/issues" rel="noopener">github.com/thanabartbb/aibotq-site/issues</a>. Please don’t post secrets in it.</li></ul>
+
+<h2 class="d">Changes</h2>
+<p>If this policy changes materially, the date above changes with it.</p>
+</article></div></main>
+<div id="site-footer"></div><script src="/app.js"></script></body></html>

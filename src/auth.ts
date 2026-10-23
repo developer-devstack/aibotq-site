@@ -6,6 +6,7 @@ const SESSION_COOKIE = 'aq_session';
 const STATE_COOKIE = 'aq_oauth';
 const SESSION_TTL = 30 * 24 * 3600;
 const STATE_TTL = 600;
+const NEXT_ALLOWED = ['/new/?step=1', '/dashboard/'];
 
 export async function getSessionUser(req: Request, env: Env): Promise<{ user: User; sessionId: string } | null> {
   const token = parseCookies(req)[SESSION_COOKIE];
@@ -37,7 +38,9 @@ export async function authStart(c: Ctx, providerName: string): Promise<Response>
   const mode = c.url.searchParams.get('mode') === 'signup' ? 'signup' : 'login';
   const state = randomToken(24);
   const redirectUri = `${appOrigin(c.env, c.url)}/api/auth/${p}/callback`;
-  const stateCookie = await sign(c.env, { state, p, mode, exp: Date.now() + STATE_TTL * 1000 });
+  const nextParam = c.url.searchParams.get('next') || '';
+  const next = NEXT_ALLOWED.includes(nextParam) ? nextParam : '/new/?step=1';
+  const stateCookie = await sign(c.env, { state, p, mode, next, exp: Date.now() + STATE_TTL * 1000 });
   return new Response(null, {
     status: 302,
     headers: {
@@ -62,7 +65,7 @@ export async function authCallback(c: Ctx, providerName: string): Promise<Respon
   const q = c.url.searchParams;
   if (q.get('error')) return redirectWithError(c, `${CFG[p].label} sign-in was cancelled or denied: ${q.get('error_description') || q.get('error')}`);
 
-  const saved = await unsign<{ state: string; p: Provider; mode: string; exp: number }>(c.env, parseCookies(c.req)[STATE_COOKIE]);
+  const saved = await unsign<{ state: string; p: Provider; mode: string; next?: string; exp: number }>(c.env, parseCookies(c.req)[STATE_COOKIE]);
   const state = q.get('state') || '';
   if (!saved || saved.p !== p || saved.exp < Date.now() || !timingSafeEqual(saved.state, state)) {
     return redirectWithError(c, 'Sign-in session expired or was tampered with — please try again');
@@ -103,7 +106,7 @@ export async function authCallback(c: Ctx, providerName: string): Promise<Respon
       .bind(await sha256Hex(sessionToken), userId, Date.now() + SESSION_TTL * 1000)
       .run();
 
-    const headers = new Headers({ location: '/new/?step=1', 'cache-control': 'no-store' });
+    const headers = new Headers({ location: saved.next && NEXT_ALLOWED.includes(saved.next) ? saved.next : '/new/?step=1', 'cache-control': 'no-store' });
     headers.append('set-cookie', cookie(c.url, SESSION_COOKIE, sessionToken, SESSION_TTL));
     headers.append('set-cookie', cookie(c.url, STATE_COOKIE, '', 0));
     return new Response(null, { status: 302, headers });

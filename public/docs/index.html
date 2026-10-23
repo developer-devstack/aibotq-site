@@ -1,0 +1,104 @@
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Docs — Aibotq.dev</title><meta name="description" content="How to connect a source, configure, and deploy on Aibotq.dev — plus the build-pipeline contract, JSON API and self-hosting setup.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF5A1F'/%3E%3Cpath d='M18 4 8 18h7l-2 10 10-14h-7z' fill='%2307080C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:ital,wght@1,700;1,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"><script>try{document.documentElement.dataset.theme=localStorage.theme||'dark'}catch(e){}</script></head>
+<body data-page="docs"><div id="site-nav"></div>
+<main class="page"><div class="wrap">
+<div class="ph"><span class="eyebrow">// docs</span><h1 class="d">Docs</h1><p>From repository to live URL in three steps, and everything underneath: webhooks, the signed build-pipeline contract, the JSON API and self-hosting.</p></div>
+<div class="docs">
+<nav class="toc" aria-label="On this page"><a href="#source">1 · Connect a source</a><a href="#configure">2 · Configure</a><a href="#deploy">3 · Deploy</a><a href="#git-push">Git push = deploy</a><a href="#env">Environment variables</a><a href="#pipeline">Build pipeline contract</a><a href="#api">JSON API</a><a href="#self-host">Self-hosting</a></nav>
+<article class="prose">
+
+<h2 id="source" class="d">1 · Connect a source</h2>
+<p>Open <a href="/new/">/new</a>. You can start four ways:</p>
+<ul>
+<li><strong>Import a repository.</strong> Sign in with GitHub (scopes <code>read:user</code> and <code>repo</code>), search your repositories — private and organization repos included — and press <em>Import</em>. GitLab and Bitbucket work the same way when the operator has configured them; otherwise their buttons say so.</li>
+<li><strong>Public repository URL.</strong> Paste an <code>https://</code> URL on github.com, gitlab.com or bitbucket.org. Aibotq checks the repository exists before continuing.</li>
+<li><strong>Upload.</strong> Drop a folder or a <code>.zip</code>. Limits: 50&nbsp;MB and 1000 files; <code>node_modules</code>, <code>.git</code> and <code>.env*</code> are skipped. Uploads require an R2 bucket bound to the Worker — if there isn't one, the UI tells you.</li>
+<li><strong>Template.</strong> Agent App, AI Chatbot and Commerce Agent are GitHub template repositories. Aibotq copies one into your account as a new repository (private by default) and carries on.</li></ul>
+
+<h2 id="configure" class="d">2 · Configure</h2>
+<table><thead><tr><th>Field</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Project name</td><td>2–40 characters: lowercase letters, numbers, hyphens.</td></tr>
+<tr><td>Framework</td><td>nextjs, nuxt, astro, sveltekit, remix, vite, cra, node, static, other. Auto-detected from <code>package.json</code> (and re-detected when you change the root directory).</td></tr>
+<tr><td>Build command</td><td>Single line, e.g. <code>npm run build</code>. Empty means no build step.</td></tr>
+<tr><td>Output directory</td><td>Relative path such as <code>dist</code> or <code>.next</code>. No <code>..</code>.</td></tr>
+<tr><td>Root directory</td><td>For monorepos: the sub-folder that holds the project.</td></tr>
+<tr><td>Environment variables</td><td>See <a href="#env">below</a>.</td></tr></tbody></table>
+
+<h2 id="deploy" class="d">3 · Deploy</h2>
+<p>Press <em>Deploy to edge</em>. Aibotq creates a deployment record and sends a signed request to the build pipeline. The page then polls the deployment and shows its real state — <strong>Queued → Building → Live</strong> — together with the log the pipeline reports. When the pipeline reports success you get the live URL.</p>
+<p>Nothing is simulated. If the pipeline is not configured or cannot be reached you see <code>Deploy failed: &lt;reason&gt;</code>, and a deployment that never reports back is marked failed after 20 minutes. Deploys are rate-limited to 10 per 10 minutes per account. Redeploy any time from the <a href="/dashboard/">dashboard</a>.</p>
+
+<h2 id="git-push" class="d">Git push = deploy</h2>
+<p>For GitHub repositories, creating the project registers a webhook on the repository:</p>
+<ul><li>a push to the <strong>default branch</strong> starts a <em>production</em> deployment;</li>
+<li>a pull request <em>opened</em>, <em>synchronized</em> or <em>reopened</em> from the same repository starts a <em>preview</em> deployment;</li>
+<li>pull requests from forks are ignored so untrusted code never runs next to your environment variables.</li></ul>
+<p>Registering a webhook needs admin access to the repository and a server-side <code>GITHUB_WEBHOOK_SECRET</code>. If either is missing, the project page shows the actual reason instead of claiming auto-deploy is on. GitLab, Bitbucket and uploads are redeployed manually.</p>
+
+<h2 id="env" class="d">Environment variables</h2>
+<p>Up to 64 variables per project, names matching <code>[A-Za-z_][A-Za-z0-9_]*</code>, values up to 4096 characters. They are encrypted at rest (AES-GCM) and are <strong>write-only</strong>: the API returns only their names. They are sent to the build pipeline when a deployment starts — treat the pipeline as part of your trust boundary.</p>
+
+<h2 id="pipeline" class="d">Build pipeline contract</h2>
+<p>Aibotq does not build code itself; it hands the job to a build pipeline you operate (<code>DEPLOY_WEBHOOK_URL</code>) and tracks the result.</p>
+<h3>Request: Aibotq → pipeline</h3>
+<p><code>POST DEPLOY_WEBHOOK_URL</code>, JSON body, with headers <code>x-aibotq-event: build</code>, <code>x-aibotq-timestamp</code> (unix seconds) and <code>x-aibotq-signature: sha256=&lt;hex&gt;</code> where the signature is <code>HMAC-SHA256(DEPLOY_WEBHOOK_SECRET, "&lt;timestamp&gt;.&lt;raw body&gt;")</code>. Verify it and reject old timestamps.</p>
+<div class="win"><div class="bar"><b style="background:#FF5F57"></b><b style="background:#FEBC2E"></b><b style="background:#28C840"></b><span>build request body</span><button class="copy" data-copy='{"deployment_id":"…","environment":"production","project":{"id":"…","name":"my-agent","framework":"nextjs","build_command":"npm run build","output_dir":".next","root_dir":""},"source":{"type":"git","provider":"github","repo":"owner/repo","clone_url":"https://github.com/owner/repo.git","branch":"main","commit_sha":null,"private":false},"env":{"KEY":"value"},"callback_url":"https://aibotq.dev/api/deployments/…/callback"}'>⧉ Copy</button></div><pre><code>{
+  "deployment_id": "…",
+  "environment": "production" | "preview",
+  "project": { "id", "name", "framework", "build_command", "output_dir", "root_dir" },
+  "source": {
+    "type": "git", "provider", "repo", "clone_url", "branch", "commit_sha", "private",
+    "token": "…"            // only for private repos
+    // or: "type": "upload", "manifest_url": "…"   (short-lived signed URL)
+  },
+  "env": { "KEY": "value" },
+  "callback_url": "https://aibotq.dev/api/deployments/&lt;id&gt;/callback"
+}</code></pre></div>
+<p>Any non-2xx answer (or no answer within 15 seconds) fails the deployment with that reason.</p>
+<h3>Callback: pipeline → Aibotq</h3>
+<p><code>POST callback_url</code> with the same signing scheme and a JSON body. Call it as often as you like while building, then once with a final status.</p>
+<div class="win"><div class="bar"><b style="background:#FF5F57"></b><b style="background:#FEBC2E"></b><b style="background:#28C840"></b><span>callback body</span><button class="copy" data-copy='{"status":"ready","step":"live","log":"build ok","url":"https://my-agent.example.com","commit_sha":"abc1234"}'>⧉ Copy</button></div><pre><code>{
+  "status": "building" | "ready" | "failed",
+  "step": "optional short label",
+  "log": "optional text appended to the deployment log",
+  "url": "https://…",          // required when status is "ready", https only
+  "commit_sha": "optional"
+}</code></pre></div>
+
+<h2 id="api" class="d">JSON API</h2>
+<p>Cookie-authenticated, same-origin. Responses are <code>{"ok":true,"data":…}</code> or <code>{"ok":false,"error":"…"}</code>. Every POST must carry a same-origin <code>Origin</code> header.</p>
+<table><thead><tr><th>Route</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>GET /api/config</code></td><td>Which providers, uploads and deploy pipeline are configured.</td></tr>
+<tr><td><code>GET /api/me</code></td><td>Current user or <code>null</code>.</td></tr>
+<tr><td><code>GET /api/auth/github?mode=login|signup</code></td><td>Start OAuth (also gitlab, bitbucket).</td></tr>
+<tr><td><code>POST /api/auth/logout</code></td><td>End the session.</td></tr>
+<tr><td><code>GET /api/repos?provider&amp;q&amp;page</code></td><td>Your repositories, searchable and paginated.</td></tr>
+<tr><td><code>POST /api/repos/resolve</code></td><td>Validate a public repository URL.</td></tr>
+<tr><td><code>GET /api/repos/detect</code></td><td>Detect framework and build settings.</td></tr>
+<tr><td><code>POST /api/upload</code></td><td>Multipart upload (<code>files</code>) to R2.</td></tr>
+<tr><td><code>GET /api/templates</code> · <code>POST /api/templates/:id/create</code></td><td>List templates; create a repo from one.</td></tr>
+<tr><td><code>GET /api/projects</code> · <code>POST /api/projects</code></td><td>List or create projects.</td></tr>
+<tr><td><code>GET /api/projects/:id</code> · <code>GET /api/projects/:id/deployments</code></td><td>Project details; deployment history with logs.</td></tr>
+<tr><td><code>POST /api/projects/:id/deploy</code></td><td>Start a production deployment.</td></tr>
+<tr><td><code>GET /api/deployments/:id</code></td><td>Status and log of one deployment.</td></tr></tbody></table>
+
+<h2 id="self-host" class="d">Self-hosting</h2>
+<p>Aibotq.dev is a Cloudflare Worker with static assets and a D1 database. To run your own:</p>
+<div class="win"><div class="bar"><b style="background:#FF5F57"></b><b style="background:#FEBC2E"></b><b style="background:#28C840"></b><span>setup</span><button class="copy" data-copy="npm install&#10;npx wrangler d1 create aibotq&#10;npx wrangler d1 migrations apply aibotq --remote">⧉ Copy</button></div><pre><code>npm install
+npx wrangler d1 create aibotq          # paste the id into wrangler.jsonc
+npx wrangler d1 migrations apply aibotq --remote
+npx wrangler secret put GITHUB_CLIENT_ID
+npx wrangler secret put GITHUB_CLIENT_SECRET
+npx wrangler secret put SESSION_SECRET
+npx wrangler secret put GITHUB_WEBHOOK_SECRET
+npx wrangler secret put DEPLOY_WEBHOOK_SECRET
+npx wrangler deploy</code></pre></div>
+<p>Register a GitHub OAuth App with the callback URL <code>https://aibotq.dev/api/auth/github/callback</code> (use your own domain). Optionally create an R2 bucket (<code>npx wrangler r2 bucket create aibotq-uploads</code>) and bind it as <code>UPLOADS</code> to enable uploads. For local work put the same names in an untracked <code>.dev.vars</code> file and run <code>npx wrangler dev</code>. Never commit secrets.</p>
+</article></div></div></main>
+<div id="site-footer"></div>
+<script src="/app.js"></script>
+<script>(function(){var l=[].slice.call(document.querySelectorAll('.toc a')),s=l.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))}).filter(Boolean);if(!('IntersectionObserver'in window))return;var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){l.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'-20% 0px -70% 0px'});s.forEach(function(x){o.observe(x)})})()</script>
+</body></html>

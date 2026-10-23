@@ -1,6 +1,6 @@
 import { authCallback, authStart, config, logout, me } from './auth';
 import { ApiError, checkCsrf, fail } from './lib';
-import { deploymentCallback, deploymentGet, githubWebhook, projectCreate, projectDeploy, projectGet } from './projects';
+import { deploymentCallback, deploymentGet, githubWebhook, projectCreate, projectDeploy, projectDeployments, projectGet, projectList } from './projects';
 import { reposDetect, reposList, reposResolve, templateCreate, templatesList, upload, uploadFile, uploadManifest } from './repos';
 import type { Ctx, Env } from './types';
 
@@ -28,7 +28,9 @@ const routes: Route[] = [
   { method: 'GET', re: new RegExp(`^/api/uploads/${seg}/file$`), handler: uploadFile },
   { method: 'GET', re: /^\/api\/templates$/, handler: templatesList },
   { method: 'POST', re: new RegExp(`^/api/templates/${seg}/create$`), handler: templateCreate },
+  { method: 'GET', re: /^\/api\/projects$/, handler: projectList },
   { method: 'POST', re: /^\/api\/projects$/, handler: projectCreate },
+  { method: 'GET', re: new RegExp(`^/api/projects/${seg}/deployments$`), handler: projectDeployments },
   { method: 'GET', re: new RegExp(`^/api/projects/${seg}$`), handler: projectGet },
   { method: 'POST', re: new RegExp(`^/api/projects/${seg}/deploy$`), handler: projectDeploy },
   { method: 'GET', re: new RegExp(`^/api/deployments/${seg}$`), handler: deploymentGet },

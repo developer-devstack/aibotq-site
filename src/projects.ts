@@ -177,6 +177,29 @@ export async function projectGet(c: Ctx, id: string): Promise<Response> {
   return ok({ project: await projectPublic(c.env, p), latest_deployment: d ? deploymentPublic(await expireIfStuck(c.env, d)) : null });
 }
 
+export async function projectList(c: Ctx): Promise<Response> {
+  const user = await requireUser(c);
+  const { results } = await c.env.DB.prepare(
+    `SELECT p.*, d.id AS d_id, d.status AS d_status, d.step AS d_step, d.url AS d_url, d.environment AS d_env, d.created_at AS d_created
+     FROM projects p LEFT JOIN deployments d ON d.id = (SELECT id FROM deployments WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1)
+     WHERE p.user_id = ? ORDER BY p.created_at DESC LIMIT 100`,
+  )
+    .bind(user.id)
+    .all<ProjectRow & { d_id: string | null; d_status: string | null; d_step: string | null; d_url: string | null; d_env: string | null; d_created: number | null }>();
+  const projects = results.map((r) => ({
+    id: r.id, name: r.name, repo_full_name: r.repo_full_name, source: r.source, provider: r.provider, private: !!r.repo_private,
+    framework: r.framework, webhook_status: r.webhook_status, status: r.status, url: r.url, created_at: r.created_at,
+    latest_deployment: r.d_id ? { id: r.d_id, status: r.d_status, step: r.d_step, url: r.d_url, environment: r.d_env, created_at: r.d_created } : null,
+  }));
+  return ok({ projects });
+}
+
+export async function projectDeployments(c: Ctx, id: string): Promise<Response> {
+  await ownedProject(c, id);
+  const { results } = await c.env.DB.prepare('SELECT * FROM deployments WHERE project_id = ? ORDER BY created_at DESC LIMIT 30').bind(id).all<DeploymentRow>();
+  return ok({ deployments: await Promise.all(results.map(async (d) => deploymentPublic(await expireIfStuck(c.env, d)))) });
+}
+
 // ---------- deploy ----------
 async function appendLog(env: Env, id: string, line: string): Promise<void> {
   await env.DB.prepare('UPDATE deployments SET log = substr(log || ?, -?) WHERE id = ?').bind(line + '\n', MAX_LOG, id).run();
