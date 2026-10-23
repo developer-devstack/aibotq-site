@@ -22,6 +22,7 @@
     "@iconify-json/simple-icons": "^1.2.100",
     "@nuxt/ui": "^4.12.0",
     "nuxt": "^4.6.2",
+    "nuxt-auth-utils": "^0.5.32",
     "tailwindcss": "^4.3.3",
     "unpdf": "^1.7.0",
     "vue": "^3.5.44",

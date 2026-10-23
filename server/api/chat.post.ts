@@ -1,6 +1,6 @@
 // POST /api/chat — provider-agnostic chat with tool calling (server/utils/llm.ts + tools.ts). Honest errors; nothing simulated.
 import { chat } from '../utils/llm'
-import { isAdmin } from '../utils/tools'
+import { chatIdentity } from '../utils/owner'
 import { extractText } from 'unpdf'
 export default defineEventHandler(async (event) => {
   const env = (event.context as any).cloudflare?.env || {}
@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
       } else if (typeof f.text === 'string') files.push({ name: String(f.name).slice(0, 200), text: f.text.slice(0, 200000) })
     } catch (e: any) { files.push({ name: String(f.name), text: `[Could not read file: ${e.message}]` }) }
   }
-  const admin = await isAdmin(env, getHeader(event, 'x-admin-token'))
-  const r = await chat(env, body?.model, messages, { env, req: toWebRequest(event), admin, files })
+  const { admin, user } = await chatIdentity(event)
+  const r = await chat(env, body?.model, messages, { env, req: toWebRequest(event), admin, files, user })
   if (!r.ok) { setResponseStatus(event, r.status); return { ok: false, code: r.status === 501 ? 'chat_not_configured' : 'model_error', error: r.error } }
-  return { ok: true, data: { text: r.text, model: r.model, provider: r.provider, fallback: r.fallback, tools: r.tools, admin } }
+  return { ok: true, data: { text: r.text, model: r.model, provider: r.provider, fallback: r.fallback, tools: r.tools, admin, user } }
 })

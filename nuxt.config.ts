@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-05-01',
   devtools: { enabled: false },
-  modules: ['@nuxt/ui'],
+  modules: ['@nuxt/ui', 'nuxt-auth-utils'],
   css: ['~/assets/css/main.css'],
   colorMode: { preference: 'dark', fallback: 'dark' },
   // Upright weights only — never fetch an italic face.

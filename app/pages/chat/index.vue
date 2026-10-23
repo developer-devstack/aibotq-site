@@ -20,7 +20,7 @@ async function pickFiles(e: Event) {
 // Owner mode: token kept only in this tab's sessionStorage and checked server-side.
 const adminToken = ref(''); const isAdmin = ref(false); const adminOpen = ref(false); const adminInput = ref('')
 async function checkAdmin(t: string) { const r = await fetch('/api/chat/admin', { method: 'POST', headers: { 'x-admin-token': t } }).then(r => r.json()).catch(() => null); isAdmin.value = !!r?.data?.admin; return r?.data }
-onMounted(async () => { const t = sessionStorage.getItem('aibotq_admin'); if (t && await checkAdmin(t)) adminToken.value = t })
+onMounted(async () => { const t = sessionStorage.getItem('aibotq_admin'); const d = await checkAdmin(t || ''); if (t && d?.admin && d?.via === 'token') adminToken.value = t })
 async function saveAdmin() { const d = await checkAdmin(adminInput.value); if (d?.admin) { adminToken.value = adminInput.value; sessionStorage.setItem('aibotq_admin', adminInput.value); adminOpen.value = false; error.value = '' } else error.value = d?.configured === false ? 'Owner mode is not configured on the server (ADMIN_CHAT_TOKEN missing).' : 'Wrong owner token.'; adminInput.value = '' }
 function logoutAdmin() { sessionStorage.removeItem('aibotq_admin'); adminToken.value = ''; isAdmin.value = false }
 async function confirmTool(t: ToolEv) {

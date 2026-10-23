@@ -32,16 +32,11 @@ export function useSession() {
     cfg.value = c; user.value = u; loaded.value = true
   }
   const toast = useToast()
-  function login(provider = 'github', mode = 'login', next = '/dashboard/') {
-    const p = cfg.value?.providers?.[provider]
-    if (!p?.configured) {
-      toast.add({ color: 'error', title: provider === 'github' ? 'GitHub sign-in is not set up on this server yet' : `${LABEL[provider] || provider} is not configured yet`, description: provider === 'github' ? 'GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are missing (see the README).' : undefined })
-      return
-    }
-    location.href = `/api/auth/${provider}?mode=${mode === 'signup' ? 'signup' : 'login'}&next=${encodeURIComponent(next)}`
+  function login(_provider = 'github', _mode = 'login', _next = '/dashboard/') {
+    location.href = '/auth/github'
   }
   async function logout() {
-    try { await aq('/auth/logout', { method: 'POST', body: {} }) } catch (e: any) { toast.add({ color: 'error', title: e.message }); return }
+    try { await aq('/auth/logout', { method: 'POST', body: {} }); await fetch('/api/_auth/session', { method: 'DELETE', credentials: 'same-origin' }) } catch (e: any) { toast.add({ color: 'error', title: e.message }); return }
     location.href = '/'
   }
   return { user, cfg, loaded, error, load, login, logout }
