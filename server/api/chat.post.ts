@@ -2,6 +2,7 @@
 import { chat } from '../utils/llm'
 import { chatIdentity } from '../utils/owner'
 import { extractText } from 'unpdf'
+import { classify, record } from '../utils/activity'
 export default defineEventHandler(async (event) => {
   const env = (event.context as any).cloudflare?.env || {}
   const body = await readBody<{ model?: string, messages?: { role: string, content: string }[], files?: { name: string, type?: string, text?: string, base64?: string }[] }>(event).catch(() => null)
@@ -23,6 +24,8 @@ export default defineEventHandler(async (event) => {
     } catch (e: any) { files.push({ name: String(f.name), text: `[Could not read file: ${e.message}]` }) }
   }
   const { admin, user } = await chatIdentity(event)
+  // Topic categories only (never the message text); skipped unless the visitor consented.
+  for (const topic of classify(messages[messages.length - 1]!.content)) await record(env, event, { type: 'topic', path: '/chat/', topic }).catch(() => {})
   const r = await chat(env, body?.model, messages, { env, req: toWebRequest(event), admin, files, images, user, lastUserMessage: messages[messages.length - 1]!.content })
   if (!r.ok) { setResponseStatus(event, r.status); return { ok: false, code: r.status === 501 ? 'chat_not_configured' : 'model_error', error: r.error } }
   return { ok: true, data: { text: r.text, model: r.model, provider: r.provider, fallback: r.fallback, tools: r.tools, admin, user } }
