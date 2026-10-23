@@ -46,8 +46,8 @@ const domainLog = `$ aibotq domains add agent.example.com
       <template #links>
         <div class="flex w-full items-center gap-4">
           <div class="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <UButton label="Start deploying" to="/new/" trailing-icon="i-lucide-arrow-right" size="xl" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
-            <UButton label="Read the docs" to="/docs/" color="neutral" variant="subtle" size="xl" icon="i-lucide-book-open" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
+            <UButton label="Start deploying" to="/new/" data-track="hero_start" trailing-icon="i-lucide-arrow-right" size="xl" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
+            <UButton label="Read the docs" to="/docs/" data-track="hero_docs" color="neutral" variant="subtle" size="xl" icon="i-lucide-book-open" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
           </div>
           <HeroChip class="w-[130px] shrink-0 sm:w-40 lg:hidden" />
         </div>
@@ -112,6 +112,8 @@ const domainLog = `$ aibotq domains add agent.example.com
         <pre class="text-sm font-mono leading-7 text-toned whitespace-pre-wrap">{{ domainLog }}</pre>
       </UCard>
     </UPageSection>
+
+    <ForYou />
 
     <UPageSection id="pricing" headline="Pricing" title="Start free. Scale when it matters." description="Plans shown are a layout draft — Pro and Team prices are not final.">
       <UPricingPlans :plans="plans" />

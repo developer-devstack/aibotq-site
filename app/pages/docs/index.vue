@@ -13,7 +13,7 @@ useSeoMeta({ title: "Docs \u2014 Aibotq.dev", description: "How to connect a sou
         </UPageAside>
       </template>
       <UPageHeader headline="Documentation" :title="page.title" :description="page.lead" />
-      <UPageBody><ProseHtml :html="page.body" /></UPageBody>
+      <UPageBody><ForYou class="!px-0 !py-0 mb-8" /><ProseHtml :html="page.body" /></UPageBody>
     </UPage>
   </UContainer>
 </template>

@@ -145,6 +145,7 @@ const templates = ref<Record<string, string>>({}), tplLoaded = ref(false)
 const tplOpen = ref<string | null>(null), tplName = ref(''), tplPrivate = ref(true), tplBusy = ref(false), tplError = ref('')
 async function loadTemplates() { try { const d = await aq('/templates'); d.templates.forEach((t: any) => (templates.value[t.id] = t.repo)) } catch {} finally { tplLoaded.value = true } }
 function openTemplate(id: string) {
+  track('click', { target: 'tpl_' + id })
   if (!user.value) return needAuth('create a repository from a template')
   tplOpen.value = id; tplName.value = id; tplError.value = ''
   if (tplLoaded.value && !templates.value[id]) tplError.value = `The "${id}" template is not configured on this server (missing from the TEMPLATES variable).`

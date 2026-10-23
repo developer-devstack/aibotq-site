@@ -9,6 +9,7 @@ const links = [[
   { label: 'Projects', icon: 'i-lucide-layout-grid', to: '/dashboard/', onSelect: close },
   { label: 'New project', icon: 'i-lucide-plus', to: '/new/', onSelect: close },
   { label: 'Agent chat', icon: 'i-lucide-message-square', to: '/chat/', onSelect: close },
+  { label: 'Live activity', icon: 'i-lucide-activity', to: '/dashboard/live/', onSelect: close },
 ], [
   { label: 'Docs', icon: 'i-lucide-book-open', to: '/docs/' },
   { label: 'Changelog', icon: 'i-lucide-history', to: '/changelog/' },

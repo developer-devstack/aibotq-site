@@ -31,6 +31,7 @@ async function confirmTool(t: ToolEv) {
 }
 const messages = ref<Msg[]>([])
 const input = ref('')
+onMounted(() => { const q = new URLSearchParams(location.search).get('q'); if (q) input.value = q.slice(0, 500) })
 const status = ref<'ready' | 'submitted' | 'error'>('ready')
 const error = ref('')
 type ModelDef = { id: string, label: string, provider: string }
