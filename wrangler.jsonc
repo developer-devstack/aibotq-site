@@ -20,6 +20,7 @@
     },
     // devstack.bid build pipeline endpoint (HMAC-signed with DEPLOY_WEBHOOK_SECRET).
     "CHAT_MODEL": "claude-haiku-5-5",
+    "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",
     "DEPLOY_WEBHOOK_URL": "https://devstack.bid/api/build"
   },
   "d1_databases": [
