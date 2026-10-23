@@ -1,6 +1,7 @@
 // One Durable Object + Container per chat identity (getByName). Commands run with a hard timeout and capped output.
 import { Files } from '@cloudflare/sandbox'
 import { DurableObject } from 'cloudflare:workers'
+import { runBuild, type BuildJob } from './build'
 const IDLE_MS = 10 * 60_000
 const CAP = 16_000
 const dec = (b?: Uint8Array) => b ? new TextDecoder().decode(b) : ''
@@ -27,4 +28,21 @@ export class Sandbox extends DurableObject<any> {
   }
   async write(path: string, content: string, internet = false) { await this.ensure(internet); await this.files.writeFile(path, content); return { ok: true, path, bytes: content.length } }
   async read(path: string, internet = false) { await this.ensure(internet); const r = await this.files.readFile(path); return { path, content: cap(await r.text()) } }
+  // Builds run in an alarm (long wall time) so the request that queued them can return immediately.
+  async startBuild(job: BuildJob) { await this.ctx.storage.put('job', job); await this.ctx.storage.setAlarm(Date.now()); return { queued: true } }
+  async alarm() {
+    const job = await this.ctx.storage.get<BuildJob>('job')
+    if (!job) return
+    await this.ctx.storage.delete('job')
+    const c = this.ctx.container!
+    if (!c.running) c.start({ image: (c as any).images.sandbox, enableInternet: true })
+    await c.setInactivityTimeout(IDLE_MS)
+    const exec = async (cmd: string, sec: number) => {
+      const p = await c.exec(['timeout', '-k', '5', String(sec), 'bash', '-c', cmd], { cwd: '/' })
+      const o = await p.output()
+      return { exitCode: o.exitCode, out: dec(o.stdout) + dec(o.stderr) }
+    }
+    await runBuild(this.env, job, exec, async (path) => (await this.files.readFile(path)).arrayBuffer())
+    await c.destroy().catch(() => {})
+  }
 }

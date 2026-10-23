@@ -173,6 +173,15 @@ async function ownedProject(c: Ctx, id: string): Promise<ProjectRow> {
 
 export async function projectGet(c: Ctx, id: string): Promise<Response> {
   const p = await ownedProject(c, id);
+  if (p.source !== 'upload' && p.provider === 'github' && c.env.GITHUB_WEBHOOK_SECRET && /GITHUB_WEBHOOK_SECRET is not configured/.test(p.webhook_status || '')) {
+    // Projects created before the webhook secret existed: register the push/PR webhook now.
+    const t = await getToken(c.env, p.user_id, 'github');
+    if (t) {
+      const w = await registerGithubWebhook(c, t, p.repo_full_name!);
+      await c.env.DB.prepare('UPDATE projects SET webhook_id = ?, webhook_status = ? WHERE id = ?').bind(w.id, w.status, p.id).run();
+      p.webhook_id = w.id; p.webhook_status = w.status;
+    }
+  }
   const d = await c.env.DB.prepare('SELECT * FROM deployments WHERE project_id = ? ORDER BY created_at DESC LIMIT 1').bind(id).first<DeploymentRow>();
   return ok({ project: await projectPublic(c.env, p), latest_deployment: d ? deploymentPublic(await expireIfStuck(c.env, d)) : null });
 }
@@ -259,6 +268,17 @@ async function triggerBuild(c: Ctx, p: ProjectRow, d: DeploymentRow): Promise<st
       env: envVars,
       callback_url: `${appOrigin(env, c.url)}/api/deployments/${d.id}/callback`,
     });
+    if (env.DEPLOY_WEBHOOK_URL === 'internal') {
+      // Self-hosted pipeline: build in this Worker's Sandbox container, host on /sites/<slug>/.
+      const ns = (env as any).SANDBOX;
+      if (!ns) throw new Error('SANDBOX binding is missing');
+      const job = JSON.parse(body);
+      job.origin = appOrigin(env, c.url);
+      await ns.getByName('build-' + p.id).startBuild(job);
+      await env.DB.prepare(`UPDATE deployments SET status = 'building', step = 'build requested' WHERE id = ? AND status = 'queued'`).bind(d.id).run();
+      await appendLog(env, d.id, 'Build queued on the aibotq builder.');
+      return null;
+    }
     let res: Response;
     try {
       res = await fetch(env.DEPLOY_WEBHOOK_URL, { method: 'POST', headers: await signedHeaders(secret, body, 'build'), body, signal: AbortSignal.timeout(15_000) });
