@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import html from '~/content/docs.html?raw'
-
+import raw from '~/content/docs.html?raw'
+const page = splitLegacy(raw)
 useSeoMeta({ title: "Docs \u2014 Aibotq.dev", description: "How to connect a source, configure, and deploy on Aibotq.dev \u2014 plus the build-pipeline contract, JSON API and self-hosting setup.", ogTitle: "Docs \u2014 Aibotq.dev", ogDescription: "How to connect a source, configure, and deploy on Aibotq.dev \u2014 plus the build-pipeline contract, JSON API and self-hosting setup.", ogType: 'website', ogUrl: 'https://aibotq.dev/docs/', ogImage: 'https://aibotq.dev/icon-512.png', twitterCard: 'summary' })
-useHead({ bodyAttrs: { 'data-page': 'docs' } })
-useLegacyScripts(["/app.js"])
 </script>
-<template><div class="page-root" v-html="html" /></template>
+<template>
+  <UContainer>
+    <UPage>
+      <template #left>
+        <UPageAside>
+          <p class="text-sm font-semibold text-highlighted mb-3">On this page</p>
+          <UNavigationMenu :items="page.toc" orientation="vertical" variant="link" />
+        </UPageAside>
+      </template>
+      <UPageHeader headline="Documentation" :title="page.title" :description="page.lead" />
+      <UPageBody><ProseHtml :html="page.body" /></UPageBody>
+    </UPage>
+  </UContainer>
+</template>
