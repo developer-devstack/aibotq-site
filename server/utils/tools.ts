@@ -3,7 +3,7 @@
 import { projectList } from '../lib/projects'
 import { hmacHex, timingSafeEqual } from '../lib/lib'
 
-export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[] }
+export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], user?: { login: string, name: string | null } | null }
 export type Tool = { name: string, description: string, schema: any, admin?: boolean, write?: boolean, run: (a: any, c: ToolCtx) => Promise<any> }
 
 const REPO = (env: any) => env.ADMIN_REPO || 'thanabartbb/aibotq-site'
@@ -112,7 +112,7 @@ export async function verifyAction(env: any, payload: string, sig: string) {
   const p = JSON.parse(payload); return p.exp > Date.now() ? p as { tool: string, args: any } : null
 }
 
-export function systemPrompt(admin: boolean, files: { name: string }[], web_search: boolean) {
+export function systemPrompt(admin: boolean, files: { name: string }[], web_search: boolean, user?: { login: string, name: string | null } | null) {
   const list = toolsFor(admin).map(t => `- ${t.name}: ${t.description}`).join('\n')
   return `You are the aibotq.dev assistant. Help users ship AI agents: importing repos, configuring builds, env vars, deploys and custom domains. Be concise. Reply in the user's language.
 
@@ -121,5 +121,6 @@ ${list}
 ${web_search ? '' : '\nThere is no web search tool. If the user needs a search, say so and offer to fetch a specific URL with web_fetch instead.'}
 Rules: when the user mentions a URL or a docs page, use web_fetch. For anything about the current date/time, use current_time. For their projects/deploys, use list_projects or deploy_status. ${files.length ? `The user attached: ${files.map(f => f.name).join(', ')} — use read_uploaded_file to read them.` : ''}
 ${admin ? 'The current user is the verified site OWNER. You may read the website repo and propose changes. Write tools (propose_change, trigger_deploy) do not execute immediately: they create a pending action the owner must confirm in the UI. Never claim a change was made until a tool result confirms it. Never merge to main.' : 'Repository/admin tools are not available to this user.'}
+${user ? `The user is signed in with GitHub as @${user.login}${user.name ? ` (${user.name})` : ''}. Address them accordingly.` : 'The user is not signed in. If they need account features, suggest "Sign in with GitHub" in the header.'}
 Never invent tool results.`
 }

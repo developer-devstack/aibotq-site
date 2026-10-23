@@ -1,8 +1,9 @@
 // POST /api/chat/confirm — owner clicked Confirm on a pending write action. Requires admin token + valid HMAC signature.
-import { isAdmin, verifyAction, TOOLS } from '../../utils/tools'
+import { chatIdentity } from '../../utils/owner'
+import { verifyAction, TOOLS } from '../../utils/tools'
 export default defineEventHandler(async (event) => {
   const env = (event.context as any).cloudflare?.env || {}
-  if (!(await isAdmin(env, getHeader(event, 'x-admin-token')))) { setResponseStatus(event, 403); return { ok: false, error: 'Owner token required.' } }
+  if (!(await chatIdentity(event)).admin) { setResponseStatus(event, 403); return { ok: false, error: 'Owner token required.' } }
   const b = await readBody<{ payload: string, sig: string }>(event).catch(() => null)
   const a = b && await verifyAction(env, b.payload, b.sig).catch(() => null)
   const t = a && TOOLS.find(x => x.name === a.tool && x.write)

@@ -28,16 +28,19 @@ const userMenu = computed(() => [[{ label: user.value?.login || 'Account', type:
         <UDropdownMenu v-if="user" :items="userMenu">
           <UButton color="neutral" variant="ghost" :avatar="{ src: user.avatar, alt: user.login }" :label="user.login" class="hidden sm:inline-flex" />
         </UDropdownMenu>
+        <UDropdownMenu v-if="user" :items="userMenu">
+          <UButton color="neutral" variant="ghost" :avatar="{ src: user.avatar, alt: user.login }" :aria-label="user.login" class="sm:hidden" />
+        </UDropdownMenu>
         <template v-else>
-          <UButton label="Log in" color="neutral" variant="ghost" class="hidden sm:inline-flex" @click="login('github', 'login', '/dashboard/')" />
-          <UButton label="Sign up" trailing-icon="i-lucide-arrow-right" class="hidden sm:inline-flex" @click="login('github', 'signup', '/new/?step=1')" />
+          <UButton label="Sign in with GitHub" icon="i-simple-icons-github" color="neutral" variant="solid" class="hidden sm:inline-flex" @click="login()" />
+          <UButton icon="i-simple-icons-github" color="neutral" variant="solid" aria-label="Sign in with GitHub" class="sm:hidden" @click="login()" />
         </template>
       </ClientOnly>
     </template>
     <template #body>
       <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
       <USeparator class="my-6" />
-      <UButton v-if="!user" label="Sign up with GitHub" icon="i-simple-icons-github" block @click="login('github', 'signup', '/new/?step=1')" />
+      <UButton v-if="!user" label="Sign in with GitHub" icon="i-simple-icons-github" color="neutral" block @click="login()" />
       <UButton v-else label="Log out" color="neutral" variant="subtle" block @click="logout()" />
     </template>
   </UHeader>
