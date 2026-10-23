@@ -53,6 +53,8 @@ const domainLog = `$ aibotq domains add agent.example.com
       <template #description>
         Import a repo, drop a folder or start from a template. Aibotq.dev builds it, puts it on the edge and gives every pull request its own preview.
       </template>
+      <div>
+      <HeroChip class="w-40 -mt-40 ms-auto -me-3 sm:w-56 sm:-mt-56 lg:w-80 lg:mt-0 lg:-mb-8 lg:mx-auto" />
       <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="overflow-hidden shadow-2xl shadow-black/40">
         <div class="flex items-center gap-1.5 px-4 py-3 border-b border-default">
           <span class="size-2.5 rounded-full bg-error" /><span class="size-2.5 rounded-full bg-warning" /><span class="size-2.5 rounded-full bg-success" />
@@ -64,6 +66,7 @@ const domainLog = `$ aibotq domains add agent.example.com
 <span class="text-success">✔</span> built in 38s
 <span class="text-success">✔</span> live → <span class="text-primary">https://my-agent.aibotq.dev</span></pre>
       </UCard>
+      </div>
     </UPageHero>
 
     <UPageSection title="Works with the frameworks you already use" :ui="{ container: 'py-12 sm:py-16 lg:py-16', title: 'text-base sm:text-lg font-medium text-muted' }">
