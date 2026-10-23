@@ -16,16 +16,29 @@ const creds = new Map<string, { t: string, exp: number }>()
 
 export const dockerEnabled = (env: any) => !!(env?.DOCKER_ID && env?.DOCKER_PAT)
 
+// hub.docker.com rate-limits token exchange per source IP (Cloudflare egress IPs are shared), so cache the
+// 15-min JWT across isolates in the colo-local Cache API and retry 429s with backoff.
+const CK = 'https://aibotq.internal/docker-hub-token'
 async function hubToken(env: any, force = false) {
-  if (!force && hub && hub.id === env.DOCKER_ID && hub.exp > Date.now() + 30_000) return hub.t
-  const r = await fetch('https://hub.docker.com/v2/auth/token', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier: env.DOCKER_ID, secret: env.DOCKER_PAT }) })
-  if (!r.ok) throw new Error(`Docker auth failed (${r.status})`)
-  const t = (await r.json() as any).access_token as string
+  if (!force && hub && hub.id === env.DOCKER_ID && hub.exp > Date.now() + 60_000) return hub.t
+  const cache = (globalThis as any).caches?.default as Cache | undefined
+  const ck = CK + '/' + encodeURIComponent(env.DOCKER_ID) + '/' + (await sha(env.DOCKER_PAT)).slice(0, 16)
+  if (!force && cache) { const c = await cache.match(ck).catch(() => undefined); if (c) { const j = await c.json() as any; if (j.exp > Date.now() + 60_000) { hub = { t: j.t, exp: j.exp, id: env.DOCKER_ID }; return j.t } } }
+  let r: Response | null = null
+  for (let i = 0; i < 4; i++) {
+    r = await fetch('https://hub.docker.com/v2/auth/token', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier: env.DOCKER_ID, secret: env.DOCKER_PAT }) })
+    if (r.status !== 429 && r.status < 500) break
+    await sleep(800 * (i + 1))
+  }
+  if (!r!.ok) throw new Error(`Docker auth failed (${r!.status})`)
+  const t = (await r!.json() as any).access_token as string
   let exp = Date.now() + 4 * 60_000
   try { const p = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); if (p.exp) exp = p.exp * 1000 } catch {}
   hub = { t, exp, id: env.DOCKER_ID }
+  if (cache) { const ttl = Math.max(60, Math.floor((exp - Date.now()) / 1000) - 90); await cache.put(ck, new Response(JSON.stringify({ t, exp }), { headers: { 'cache-control': 'max-age=' + ttl } })).catch(() => {}) }
   return t
 }
+const sha = async (s: string) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(x => x.toString(16).padStart(2, '0')).join('')
 
 async function api(env: any, method: string, path: string, body?: any, retry = true): Promise<any> {
   const r = await fetch(API + path, { method, headers: { authorization: 'Bearer ' + await hubToken(env), 'content-type': 'application/json', ...(method === 'POST' && path === '/sandboxes' ? { 'idempotency-key': crypto.randomUUID() } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) })
