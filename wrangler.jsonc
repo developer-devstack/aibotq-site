@@ -19,14 +19,15 @@
       "commerce-agent": "aibotq/template-commerce-agent"
     },
     // devstack.bid build pipeline endpoint (HMAC-signed with DEPLOY_WEBHOOK_SECRET).
+    "CHAT_MODEL": "claude-haiku-5-5",
     "DEPLOY_WEBHOOK_URL": "https://devstack.bid/api/build"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "aibotq",
-      // Placeholder: replace with the id printed by `wrangler d1 create aibotq` before deploying.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Created via wrangler d1 create aibotq
+      "database_id": "3dfcad82-8f7a-49a0-a207-13e564b1068d",
       "migrations_dir": "migrations"
     }
   ]
