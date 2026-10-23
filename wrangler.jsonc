@@ -18,10 +18,11 @@
       "ai-chatbot": "aibotq/template-ai-chatbot",
       "commerce-agent": "aibotq/template-commerce-agent"
     },
-    // devstack.bid build pipeline endpoint (HMAC-signed with DEPLOY_WEBHOOK_SECRET).
     "CHAT_MODEL": "claude-haiku-5-5",
     "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",
-    "DEPLOY_WEBHOOK_URL": "https://devstack.bid/api/build"
+    // "internal" = build in this Worker's Sandbox container and host at /sites/<slug>/ (R2 SITES).
+    // Or an external HMAC-signed pipeline URL (e.g. devstack.bid once it exposes /api/build).
+    "DEPLOY_WEBHOOK_URL": "internal"
   },
   "durable_objects": { "bindings": [{ "name": "SANDBOX", "class_name": "Sandbox" }] },
   "containers": [{ "class_name": "Sandbox", "scheduling_policy": "durable_object", "images": { "sandbox": { "dockerfile": "./sandbox/Dockerfile" } } }],
@@ -34,7 +35,8 @@
       "database_id": "3dfcad82-8f7a-49a0-a207-13e564b1068d",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "r2_buckets": [{ "binding": "SITES", "bucket_name": "aibotq-sites" }]
   // Folder/zip uploads need R2. Create a bucket (`wrangler r2 bucket create aibotq-uploads`) and uncomment.
   // Without it, POST /api/upload returns a clear "upload not enabled" error.
   // ,"r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "aibotq-uploads" }]
