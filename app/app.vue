@@ -1,6 +1,5 @@
 <template>
   <UApp>
-    <LoadingOverlay />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
