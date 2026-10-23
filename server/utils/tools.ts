@@ -2,9 +2,25 @@
 // and every write tool returns a signed *pending action* that only runs after the user clicks Confirm in /chat.
 import { projectList } from '../lib/projects'
 import { hmacHex, timingSafeEqual } from '../lib/lib'
+import { dockerEnabled, dockerSandbox } from './docker-sandbox'
 
 export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], user?: { login: string, name: string | null } | null }
-const sbx = (c: ToolCtx) => { if (!c.user && !c.admin) throw new Error('Sign in with GitHub to use the sandbox.'); if (!c.env.SANDBOX) throw new Error('Sandbox is not configured on this server.'); return c.env.SANDBOX.getByName(c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner') }
+// Sandbox provider: Docker Cloud Sandboxes first (billed to Docker Agentic Platform credit), Cloudflare Sandbox as fallback.
+const cfSbx = (c: ToolCtx) => { if (!c.env.SANDBOX) throw new Error('Sandbox is not configured on this server.'); return c.env.SANDBOX.getByName(c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner') }
+const sbx = (c: ToolCtx) => {
+  if (!c.user && !c.admin) throw new Error('Sign in with GitHub to use the sandbox.')
+  const key = c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner'
+  const d = dockerEnabled(c.env) ? dockerSandbox(c.env, key, c.admin) : null
+  const run = async (name: 'exec' | 'write' | 'read', dArgs: any[], cfArgs: any[]) => {
+    if (d) { try { return await (d as any)[name](...dArgs) } catch (e: any) { if (!c.env.SANDBOX) throw e; const r = await (cfSbx(c) as any)[name](...cfArgs); return { ...r, provider: 'cloudflare', fallbackReason: String(e?.message || e).slice(0, 200) } } }
+    return { ...(await (cfSbx(c) as any)[name](...cfArgs)), provider: 'cloudflare' }
+  }
+  return {
+    exec: (argv: string[], o: { timeoutSec?: number, internet?: boolean }) => run('exec', [argv, o], [argv, o]),
+    write: (p: string, content: string, internet: boolean) => run('write', [p, content], [p, content, internet]),
+    read: (p: string, internet: boolean) => run('read', [p], [p, internet]),
+  }
+}
 const tsec = (a: any, c: ToolCtx) => Math.min(Number(a.timeout_sec) || 30, c.admin ? 120 : 30)
 export type Tool = { name: string, description: string, schema: any, admin?: boolean, auth?: boolean, write?: boolean, run: (a: any, c: ToolCtx) => Promise<any> }
 
