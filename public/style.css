@@ -21,7 +21,9 @@ nav.top{position:sticky;top:0;z-index:50;height:64px;background:var(--nav);backd
 nav.top:after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--cyan),var(--orange),transparent);opacity:.35}
 nav.top .wrap{display:flex;align-items:center;height:100%;gap:16px}
 .logo{display:flex;align-items:center;gap:8px;font-size:22px}
-.bolt{background:var(--orange);color:#07080C;border-radius:8px;padding:2px 8px;font-style:normal;box-shadow:0 0 12px rgba(255,90,31,.5);transform:skewX(-8deg);display:inline-block}
+.bolt{display:inline-block;width:1.45em;height:1.45em;background:url(/logo-mark.svg) center/contain no-repeat;font-size:inherit;color:transparent;overflow:hidden;text-indent:-99em;filter:drop-shadow(0 0 10px rgba(34,229,255,.35)) drop-shadow(0 0 14px rgba(255,90,31,.25));flex:none}
+.logo>span:last-child{background:linear-gradient(100deg,var(--t1) 55%,var(--cyan));-webkit-background-clip:text;background-clip:text}
+.logo .dev{-webkit-text-fill-color:var(--cyan);text-shadow:0 0 14px rgba(34,229,255,.45)}
 .logo .dev{color:var(--cyan)}
 .links{display:flex;gap:4px;margin:0 auto}.links a{color:var(--t2);font-size:14px;font-weight:500;padding:8px 12px;border-radius:8px;transition:.15s}.links a:hover,.links a.on{color:var(--t1);background:var(--surface)}
 .right{display:flex;align-items:center;gap:10px}
