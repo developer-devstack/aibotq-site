@@ -41,9 +41,17 @@ const domainLog = `$ aibotq domains add agent.example.com
   <div>
     <UPageHero
       orientation="horizontal"
-      :links="[{ label: 'Start deploying', to: '/new/', trailingIcon: 'i-lucide-arrow-right', size: 'xl' }, { label: 'Read the docs', to: '/docs/', color: 'neutral', variant: 'subtle', size: 'xl', icon: 'i-lucide-book-open' }]"
       :ui="{ container: 'py-20 sm:py-28 lg:py-32', title: 'text-5xl sm:text-7xl' }"
     >
+      <template #links>
+        <div class="flex w-full items-center gap-4">
+          <div class="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <UButton label="Start deploying" to="/new/" trailing-icon="i-lucide-arrow-right" size="xl" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
+            <UButton label="Read the docs" to="/docs/" color="neutral" variant="subtle" size="xl" icon="i-lucide-book-open" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
+          </div>
+          <HeroChip class="w-[130px] shrink-0 sm:w-40 lg:hidden" />
+        </div>
+      </template>
       <template #headline>
         <UBadge label="Now building on the edge" color="neutral" variant="outline" icon="i-lucide-zap" class="rounded-full" />
       </template>
@@ -54,17 +62,13 @@ const domainLog = `$ aibotq domains add agent.example.com
         Import a repo, drop a folder or start from a template. Aibotq.dev builds it, puts it on the edge and gives every pull request its own preview.
       </template>
       <div>
-      <HeroChip class="w-40 -mt-40 ms-auto -me-3 sm:w-56 sm:-mt-56 lg:w-80 lg:mt-0 lg:-mb-8 lg:mx-auto" />
+      <HeroChip class="hidden lg:block lg:w-80 lg:mx-auto lg:-mb-8" />
       <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="overflow-hidden shadow-2xl shadow-black/40">
         <div class="flex items-center gap-1.5 px-4 py-3 border-b border-default">
           <span class="size-2.5 rounded-full bg-error" /><span class="size-2.5 rounded-full bg-warning" /><span class="size-2.5 rounded-full bg-success" />
           <span class="ms-3 text-xs text-muted font-mono">~/my-agent</span>
         </div>
-        <pre class="p-5 text-sm font-mono leading-7 text-toned overflow-x-auto"><span class="text-primary">$</span> git push origin main
-<span class="text-muted">→ aibotq.dev · build queued</span>
-<span class="text-success">✔</span> detected <span class="text-highlighted">Nuxt</span> · npm run build
-<span class="text-success">✔</span> built in 38s
-<span class="text-success">✔</span> live → <span class="text-primary">https://my-agent.aibotq.dev</span></pre>
+        <HeroTerminal />
       </UCard>
       </div>
     </UPageHero>
@@ -102,7 +106,6 @@ const domainLog = `$ aibotq domains add agent.example.com
       title="Your domain. Your brand."
       description="Add a domain, set one DNS record, and the certificate is issued for you. Subdomains on aibotq.dev work out of the box."
       orientation="horizontal"
-      :links="[{ label: 'How custom domains work', to: '/docs/', color: 'neutral', variant: 'subtle', trailingIcon: 'i-lucide-arrow-right' }]"
       :features="[{ icon: 'i-lucide-check', title: 'One CNAME record' }, { icon: 'i-lucide-shield-check', title: 'Automatic HTTPS' }, { icon: 'i-lucide-globe', title: 'Free *.aibotq.dev subdomain' }]"
     >
       <UCard variant="subtle">
@@ -119,8 +122,7 @@ const domainLog = `$ aibotq domains add agent.example.com
         title="Ready to deploy?"
         description="Connect a repository and get a live URL in minutes."
         variant="subtle"
-        :links="[{ label: 'Deploy a project', to: '/new/', trailingIcon: 'i-lucide-arrow-right' }, { label: 'Read the docs', to: '/docs/', color: 'neutral', variant: 'subtle' }]"
-      />
+        />
     </UPageSection>
   </div>
 </template>
