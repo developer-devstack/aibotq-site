@@ -3,8 +3,10 @@
 import { projectList } from '../lib/projects'
 import { hmacHex, timingSafeEqual } from '../lib/lib'
 import { dockerEnabled, dockerSandbox } from './docker-sandbox'
+import { runClairic } from './clairic'
+import { rateLimit } from '../lib/lib'
 
-export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], user?: { login: string, name: string | null } | null }
+export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], images?: { name: string, dataUrl: string }[], lastUserMessage?: string, user?: { login: string, name: string | null } | null }
 // Sandbox provider: Docker Cloud Sandboxes first (billed to Docker Agentic Platform credit), Cloudflare Sandbox as fallback.
 const cfSbx = (c: ToolCtx) => { if (!c.env.SANDBOX) throw new Error('Sandbox is not configured on this server.'); return c.env.SANDBOX.getByName(c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner') }
 const sbx = (c: ToolCtx) => {
@@ -87,6 +89,19 @@ export const TOOLS: Tool[] = [
   { name: 'deploy_status', description: 'Get the latest deployment status of one of the signed-in user\'s projects, by project name or id.',
     schema: { type: 'object', properties: { project: { type: 'string' } }, required: ['project'] },
     async run(a, c) { const r: any = await projects(c); if (r.error) return r; const p = r.projects.find((x: any) => x.id === a.project || x.name?.toLowerCase() === String(a.project).toLowerCase()); return p || { error: `No project named ${a.project}`, available: r.projects.map((x: any) => x.name) } } },
+  { name: 'extract_data', auth: true, description: "Extract typed values (text, number, date, time, datetime, duration, list, estimate, forecast) from text and/or up to 4 images with Cloudflare Clairic. Returns value, confidence, p_null and p10/p90 per field; values marked uncertain must be presented as uncertain. state defaults to the user's last message plus attached text files.",
+    schema: { type: 'object', properties: {
+      state: { type: 'string', description: "Text to read. Omit to use the user's message and attached text." },
+      image_urls: { type: 'array', items: { type: 'string' }, maxItems: 4, description: 'https URLs of PNG/JPEG/WebP images (attached images are included automatically)' },
+      fields: { type: 'object', description: 'Map of field name -> { type, instructions?, unit?, decimals?, integer?, items?, min?, max?, step?, steps? }', additionalProperties: true },
+    }, required: ['fields'] },
+    async run(a, c) {
+      const who = c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner'
+      if (c.env.DB) await rateLimit(c.env, `clairic:${who}`, c.admin ? 120 : 20, 3600)
+      const state = a.state ? String(a.state) : [c.lastUserMessage || '', ...c.files.map(f => `--- ${f.name} ---\n${f.text}`)].filter(Boolean).join('\n\n')
+      const images = [...(c.images || []).map(i => i.dataUrl), ...((Array.isArray(a.image_urls) ? a.image_urls : []).map(String))].slice(0, 4)
+      return runClairic(c.env, { state, images, fields: a.fields })
+    } },
   // ---- sandbox tools (signed-in users; owners get internet + longer timeouts) ----
   { name: 'run_code', auth: true, description: 'Run a Python or JavaScript (Node 24) snippet in your private Linux sandbox and return stdout/stderr/exitCode. Files persist in /workspace for ~10 min of idle time.',
     schema: { type: 'object', properties: { language: { type: 'string', enum: ['python', 'js'] }, code: { type: 'string' }, timeout_sec: { type: 'number' } }, required: ['language', 'code'] },
@@ -154,5 +169,6 @@ Rules: when the user mentions a URL or a docs page, use web_fetch. For anything 
 ${admin ? 'The current user is the verified site OWNER. You may read the website repo and propose changes. Write tools (propose_change, trigger_deploy) do not execute immediately: they create a pending action the owner must confirm in the UI. Never claim a change was made until a tool result confirms it. Never merge to main.' : 'Repository/admin tools are not available to this user.'}
 ${user ? `The user is signed in with GitHub as @${user.login}${user.name ? ` (${user.name})` : ''}. Address them accordingly.` : 'The user is not signed in. If they need account features, suggest "Sign in with GitHub" in the header.'}
 ${user ? 'You have a real Linux sandbox (run_code, run_command, write_file, read_file). Use it to actually run code, compute, test or convert things instead of guessing, and report the real output.' + (admin ? ' As owner the sandbox has internet access and up to 120 s per run.' : ' It has no internet access and a 30 s limit per run.') : 'Code-running sandbox tools are available only after signing in with GitHub.'}
+${user ? 'For pulling structured values out of text or images (totals, dates, amounts, lists, estimates), call extract_data. When a returned value has uncertain=true, say clearly it is uncertain and show its confidence/p_null or p10-p90 range; never present it as certain.' : ''}
 Never invent tool results.`
 }

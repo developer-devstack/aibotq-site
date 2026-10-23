@@ -12,7 +12,8 @@ const fileInput = ref<HTMLInputElement>()
 async function pickFiles(e: Event) {
   for (const f of Array.from((e.target as HTMLInputElement).files || [])) {
     if (f.size > 4_000_000) { error.value = `${f.name} is too large (max 4 MB)`; continue }
-    if (/pdf/i.test(f.type) || f.name.toLowerCase().endsWith('.pdf')) { const b = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); files.value.push({ name: f.name, type: 'application/pdf', base64: btoa(s) }) }
+    if (/^image\/(png|jpeg|webp)$/i.test(f.type)) { if (f.size > 4 * 1024 * 1024) continue; const b = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); files.value.push({ name: f.name, type: f.type, base64: btoa(s) }) }
+    else if (/pdf/i.test(f.type) || f.name.toLowerCase().endsWith('.pdf')) { const b = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); files.value.push({ name: f.name, type: 'application/pdf', base64: btoa(s) }) }
     else files.value.push({ name: f.name, type: f.type || 'text/plain', text: await f.text() })
   }
   if (fileInput.value) fileInput.value.value = ''
@@ -98,7 +99,7 @@ async function send(text?: string) {
         <div v-if="files.length" class="flex flex-wrap gap-1 mb-2"><UBadge v-for="(f, i) in files" :key="f.name" color="neutral" variant="subtle">{{ f.name }} <UIcon name="i-lucide-x" class="cursor-pointer" @click="files.splice(i, 1)" /></UBadge></div>
         <UAlert v-if="error" color="error" variant="subtle" :title="error" icon="i-lucide-triangle-alert" class="mb-3" />
         <UChatPrompt v-model="input" placeholder="Ask about imports, builds, env vars, domains…" variant="subtle" :status="status === 'submitted' ? 'submitted' : 'ready'" @submit="send()">
-          <input ref="fileInput" type="file" multiple class="hidden" accept=".txt,.md,.json,.csv,.pdf,.ts,.js,.vue,.html,.css,.py,.yaml,.yml,.toml,text/*,application/pdf" @change="pickFiles">
+          <input ref="fileInput" type="file" multiple class="hidden" accept=".txt,.md,.json,.csv,.pdf,.ts,.js,.vue,.html,.css,.py,.yaml,.yml,.toml,text/*,application/pdf,image/png,image/jpeg,image/webp" @change="pickFiles">
           <UButton icon="i-lucide-paperclip" color="neutral" variant="ghost" size="sm" aria-label="Attach file" @click="fileInput?.click()" />
           <span v-if="lastUsed" class="text-xs text-muted me-auto">Answered by {{ lastUsed }}</span>
           <UChatPromptSubmit :status="status === 'submitted' ? 'submitted' : 'ready'" color="neutral" />

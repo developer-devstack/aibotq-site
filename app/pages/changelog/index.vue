@@ -5,6 +5,9 @@ const title = 'Changelog — Aibotq.dev'
 const description = 'What changed on aibotq.dev, release by release.'
 useSeoMeta({ title, description, ogTitle: title, ogDescription: description, ogType: 'website', ogUrl: 'https://aibotq.dev/changelog/', ogImage: 'https://aibotq.dev/icon-512.png', twitterCard: 'summary' })
 const versions = [
+  { badge: 'v0.14.0', date: '2026-10-23', title: 'Typed data extraction in chat', to: 'https://developers.cloudflare.com/workers-ai/models/clairic/',
+    description: 'Signed-in users can ask the chat to pull typed values out of text or images with Cloudflare Clairic (preview).',
+    items: ['New extract_data tool: text, number, date, time, datetime, duration, list, estimate and forecast fields', 'Every value comes with confidence and p_null; estimates with a p10–p90 range', 'Low-confidence values are shown as uncertain', 'Up to 4 images per request; rate limited; inputs are never logged'] },
   { badge: 'v0.13.0', date: '2026-10-23', title: 'Mobile hero fix and live terminal',
     description: 'The hero looks right on Android and the terminal card plays the deploy.',
     items: ['Chip video now has the page colour and a soft round fade built into the video, so there is no black square on Android Chrome', 'Chip sits above the terminal on phones and never covers the buttons', 'Terminal types the command and shows each build step in turn when it scrolls into view', 'Reduced-motion users see the full output at once'] },
