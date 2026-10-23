@@ -18,7 +18,7 @@
       "ai-chatbot": "aibotq/template-ai-chatbot",
       "commerce-agent": "aibotq/template-commerce-agent"
     },
-    "CHAT_MODEL": "claude-haiku-5-5",
+    "CHAT_MODEL": "anthropic/claude-haiku-5.5",
     "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",
     // "internal" = build in this Worker's Sandbox container and host at /sites/<slug>/ (R2 SITES).
     // Or an external HMAC-signed pipeline URL (e.g. devstack.bid once it exposes /api/build).

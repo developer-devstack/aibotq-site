@@ -3,11 +3,22 @@ export type ChatMsg = { role: 'user' | 'assistant', content: string }
 export type Provider = { id: string, label: string, kind: 'anthropic' | 'openai', baseUrl: string, keyVar: string }
 export type ModelDef = { id: string, label: string, provider: string }
 
+// Vercel AI Gateway (OpenAI-compatible, https://vercel.com/docs/ai-gateway) is primary; direct Anthropic/OpenAI keys are fallbacks.
 export const PROVIDERS: Provider[] = [
+  { id: 'gateway', label: 'Vercel AI Gateway', kind: 'openai', baseUrl: 'https://ai-gateway.vercel.sh/v1', keyVar: 'AI_GATEWAY_API_KEY' },
   { id: 'anthropic', label: 'Anthropic', kind: 'anthropic', baseUrl: 'https://api.anthropic.com', keyVar: 'ANTHROPIC_API_KEY' },
   { id: 'openai', label: 'OpenAI', kind: 'openai', baseUrl: 'https://api.openai.com/v1', keyVar: 'OPENAI_API_KEY' },
 ]
 export const DEFAULT_MODELS: ModelDef[] = [
+  // Ids from https://ai-gateway.vercel.sh/v1/models
+  { id: 'anthropic/claude-haiku-5.5', label: 'Claude Haiku 5.5 (Gateway)', provider: 'gateway' },
+  { id: 'anthropic/claude-sonnet-5.5', label: 'Claude Sonnet 5.5 (Gateway)', provider: 'gateway' },
+  { id: 'openai/gpt-5.5', label: 'GPT-5.5 (Gateway)', provider: 'gateway' },
+  { id: 'openai/gpt-5.4-mini', label: 'GPT-5.4 mini (Gateway)', provider: 'gateway' },
+  { id: 'google/gemini-3.5-flash', label: 'Gemini 3.5 Flash (Gateway)', provider: 'gateway' },
+  { id: 'spacexai/grok-4.7', label: 'Grok 4.7 (Gateway)', provider: 'gateway' },
+  { id: 'deepseek/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash (Gateway)', provider: 'gateway' },
+  { id: 'nvidia/nemotron-3.5-lightning-free', label: 'Nemotron 3.5 Lightning — free (Gateway)', provider: 'gateway' },
   { id: 'claude-haiku-5-5', label: 'Claude Haiku', provider: 'anthropic' },
   { id: 'claude-sonnet-5-5', label: 'Claude Sonnet', provider: 'anthropic' },
   { id: 'gpt-4o-mini', label: 'GPT-4o mini', provider: 'openai' },
