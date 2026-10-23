@@ -4,7 +4,9 @@ import { projectList } from '../lib/projects'
 import { hmacHex, timingSafeEqual } from '../lib/lib'
 
 export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], user?: { login: string, name: string | null } | null }
-export type Tool = { name: string, description: string, schema: any, admin?: boolean, write?: boolean, run: (a: any, c: ToolCtx) => Promise<any> }
+const sbx = (c: ToolCtx) => { if (!c.user && !c.admin) throw new Error('Sign in with GitHub to use the sandbox.'); if (!c.env.SANDBOX) throw new Error('Sandbox is not configured on this server.'); return c.env.SANDBOX.getByName(c.user ? 'gh-' + c.user.login.toLowerCase() : 'owner') }
+const tsec = (a: any, c: ToolCtx) => Math.min(Number(a.timeout_sec) || 30, c.admin ? 120 : 30)
+export type Tool = { name: string, description: string, schema: any, admin?: boolean, auth?: boolean, write?: boolean, run: (a: any, c: ToolCtx) => Promise<any> }
 
 const REPO = (env: any) => env.ADMIN_REPO || 'thanabartbb/aibotq-site'
 const MAX = 20000
@@ -69,6 +71,19 @@ export const TOOLS: Tool[] = [
   { name: 'deploy_status', description: 'Get the latest deployment status of one of the signed-in user\'s projects, by project name or id.',
     schema: { type: 'object', properties: { project: { type: 'string' } }, required: ['project'] },
     async run(a, c) { const r: any = await projects(c); if (r.error) return r; const p = r.projects.find((x: any) => x.id === a.project || x.name?.toLowerCase() === String(a.project).toLowerCase()); return p || { error: `No project named ${a.project}`, available: r.projects.map((x: any) => x.name) } } },
+  // ---- sandbox tools (signed-in users; owners get internet + longer timeouts) ----
+  { name: 'run_code', auth: true, description: 'Run a Python or JavaScript (Node 24) snippet in your private Linux sandbox and return stdout/stderr/exitCode. Files persist in /workspace for ~10 min of idle time.',
+    schema: { type: 'object', properties: { language: { type: 'string', enum: ['python', 'js'] }, code: { type: 'string' }, timeout_sec: { type: 'number' } }, required: ['language', 'code'] },
+    run: async (a, c) => { const s = sbx(c), f = a.language === 'python' ? '/workspace/.run.py' : '/workspace/.run.mjs'; await s.write(f, String(a.code), c.admin); return s.exec([a.language === 'python' ? 'python3' : 'node', f], { timeoutSec: tsec(a, c), internet: c.admin }) } },
+  { name: 'run_command', auth: true, description: 'Run a shell command (bash -lc) in your private Linux sandbox (cwd /workspace). Internet access only for the site owner.',
+    schema: { type: 'object', properties: { command: { type: 'string' }, timeout_sec: { type: 'number' } }, required: ['command'] },
+    run: async (a, c) => sbx(c).exec(['bash', '-lc', String(a.command)], { timeoutSec: tsec(a, c), internet: c.admin }) },
+  { name: 'write_file', auth: true, description: 'Write a text file in your sandbox (path under /workspace).',
+    schema: { type: 'object', properties: { path: { type: 'string' }, content: { type: 'string' } }, required: ['path', 'content'] },
+    run: async (a, c) => { const p = String(a.path).startsWith('/') ? String(a.path) : '/workspace/' + a.path; if (!c.admin && !p.startsWith('/workspace/')) throw new Error('Path must be under /workspace'); return sbx(c).write(p, String(a.content).slice(0, 500000), c.admin) } },
+  { name: 'read_file', auth: true, description: 'Read a text file from your sandbox.',
+    schema: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+    run: async (a, c) => { const p = String(a.path).startsWith('/') ? String(a.path) : '/workspace/' + a.path; if (!c.admin && !p.startsWith('/workspace/')) throw new Error('Path must be under /workspace'); return sbx(c).read(p, c.admin) } },
   // ---- admin (owner) tools ----
   { name: 'list_repo_files', admin: true, description: 'Owner only. List files of the aibotq.dev website source repo (optionally under a path prefix).',
     schema: { type: 'object', properties: { prefix: { type: 'string' }, ref: { type: 'string', description: 'branch, default main' } } },
@@ -103,7 +118,7 @@ export async function isAdmin(env: any, token?: string) {
   if (!env.ADMIN_CHAT_TOKEN || !token) return false
   return timingSafeEqual(await hmacHex(env.ADMIN_CHAT_TOKEN, token), await hmacHex(env.ADMIN_CHAT_TOKEN, env.ADMIN_CHAT_TOKEN))
 }
-export const toolsFor = (admin: boolean) => TOOLS.filter(t => admin || !t.admin)
+export const toolsFor = (admin: boolean, signedIn = false) => TOOLS.filter(t => (admin || !t.admin) && (signedIn || admin || !t.auth))
 
 // Pending write actions are HMAC-signed so the browser can't alter them between proposal and confirmation.
 export async function signAction(env: any, tool: string, args: any) { const payload = JSON.stringify({ tool, args, exp: Date.now() + 30 * 60_000 }); return { payload, sig: await hmacHex(env.ADMIN_CHAT_TOKEN, payload) } }
@@ -113,7 +128,7 @@ export async function verifyAction(env: any, payload: string, sig: string) {
 }
 
 export function systemPrompt(admin: boolean, files: { name: string }[], web_search: boolean, user?: { login: string, name: string | null } | null) {
-  const list = toolsFor(admin).map(t => `- ${t.name}: ${t.description}`).join('\n')
+  const list = toolsFor(admin, !!user).map(t => `- ${t.name}: ${t.description}`).join('\n')
   return `You are the aibotq.dev assistant. Help users ship AI agents: importing repos, configuring builds, env vars, deploys and custom domains. Be concise. Reply in the user's language.
 
 You HAVE these tools and should call them instead of guessing:
@@ -122,5 +137,6 @@ ${web_search ? '' : '\nThere is no web search tool. If the user needs a search, 
 Rules: when the user mentions a URL or a docs page, use web_fetch. For anything about the current date/time, use current_time. For their projects/deploys, use list_projects or deploy_status. ${files.length ? `The user attached: ${files.map(f => f.name).join(', ')} — use read_uploaded_file to read them.` : ''}
 ${admin ? 'The current user is the verified site OWNER. You may read the website repo and propose changes. Write tools (propose_change, trigger_deploy) do not execute immediately: they create a pending action the owner must confirm in the UI. Never claim a change was made until a tool result confirms it. Never merge to main.' : 'Repository/admin tools are not available to this user.'}
 ${user ? `The user is signed in with GitHub as @${user.login}${user.name ? ` (${user.name})` : ''}. Address them accordingly.` : 'The user is not signed in. If they need account features, suggest "Sign in with GitHub" in the header.'}
+${user ? 'You have a real Linux sandbox (run_code, run_command, write_file, read_file). Use it to actually run code, compute, test or convert things instead of guessing, and report the real output.' + (admin ? ' As owner the sandbox has internet access and up to 120 s per run.' : ' It has no internet access and a 30 s limit per run.') : 'Code-running sandbox tools are available only after signing in with GitHub.'}
 Never invent tool results.`
 }

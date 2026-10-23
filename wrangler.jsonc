@@ -1,6 +1,6 @@
 {
   "name": "aibotq-site",
-  "main": "./.output/server/index.mjs",
+  "main": "./worker.ts",
   "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -23,6 +23,9 @@
     "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",
     "DEPLOY_WEBHOOK_URL": "https://devstack.bid/api/build"
   },
+  "durable_objects": { "bindings": [{ "name": "SANDBOX", "class_name": "Sandbox" }] },
+  "containers": [{ "class_name": "Sandbox", "scheduling_policy": "durable_object", "images": { "sandbox": { "dockerfile": "./sandbox/Dockerfile" } } }],
+  "exports": { "Sandbox": { "type": "durable-object", "storage": "sqlite" } },
   "d1_databases": [
     {
       "binding": "DB",

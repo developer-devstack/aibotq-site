@@ -30,7 +30,7 @@ const MAX_STEPS = 5
 
 // Agent loop: model -> tool calls -> execute -> results -> model (max MAX_STEPS). Same loop for both API kinds.
 async function call(p: Provider, key: string, model: string, messages: ChatMsg[], tc: ToolCtx, events: ToolEvent[]): Promise<string> {
-  const tools = toolsFor(tc.admin)
+  const tools = toolsFor(tc.admin, !!tc.user)
   const system = systemPrompt(tc.admin, tc.files, false, tc.user)
   const conv: any[] = p.kind === 'anthropic' ? [...messages] : [{ role: 'system', content: system }, ...messages]
   for (let step = 0; step <= MAX_STEPS; step++) {
