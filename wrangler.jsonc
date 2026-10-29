@@ -7,7 +7,10 @@
     "directory": "./.output/public",
     "binding": "ASSETS"
   },
-  "routes": [{ "pattern": "aibotq.dev", "custom_domain": true }],
+  "routes": [
+    { "pattern": "aibotq.dev", "custom_domain": true },
+    { "pattern": "www.aibotq.dev", "custom_domain": true }
+  ],
   "workers_dev": true,
   "vars": {
     "APP_URL": "https://aibotq.dev",
