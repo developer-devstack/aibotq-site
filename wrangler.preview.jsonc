@@ -1,0 +1,32 @@
+{
+  "name": "aibotq-site-light-preview",
+  "main": "./worker.preview.ts",
+  "compatibility_date": "2026-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./.output/public",
+    "binding": "ASSETS"
+  },
+  "workers_dev": true,
+  "vars": {
+    "APP_URL": "https://aibotq-site-light-preview.examplessdk.workers.dev",
+    "TEMPLATES": {
+      "agent-app": "aibotq/template-agent-app",
+      "ai-chatbot": "aibotq/template-ai-chatbot",
+      "commerce-agent": "aibotq/template-commerce-agent"
+    },
+    "CHAT_MODEL": "anthropic/claude-haiku-5.5",
+    "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",
+    "DEPLOY_WEBHOOK_URL": "internal"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aibotq",
+      "database_id": "3dfcad82-8f7a-49a0-a207-13e564b1068d",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ai": { "binding": "AI" },
+  "r2_buckets": [{ "binding": "SITES", "bucket_name": "aibotq-sites" }]
+}
