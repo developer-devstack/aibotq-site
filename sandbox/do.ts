@@ -3,8 +3,8 @@ import { Files } from '@cloudflare/sandbox'
 import { DurableObject } from 'cloudflare:workers'
 import { runBuild, type BuildJob } from './build'
 const IDLE_MS = 10 * 60_000
-// Builds: standard-2 = 1 vCPU / 6 GiB / 12 GB (durable_object start defaults to lite = 256 MiB).
-const BUILD_INSTANCE = 'standard-2'
+// Builds: standard-4 = 4 vCPU / 12 GiB / 20 GB (durable_object start defaults to lite = 256 MiB).
+const BUILD_INSTANCE = 'standard-4'
 const BUILD_IDLE_MS = 60 * 60_000
 const CAP = 16_000
 const dec = (b?: Uint8Array) => b ? new TextDecoder().decode(b) : ''

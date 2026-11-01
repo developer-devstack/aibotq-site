@@ -36,6 +36,49 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
     if (r.exitCode !== 0) throw new Error(`${label} failed (exit ${r.exitCode}${r.exitCode === 124 ? ', timed out' : ''})`)
     return r.out
   }
+  // Long install/build: run in the background and poll so the Durable Object <-> container
+  // link stays alive (a single multi-minute p.output() often dies as "Network connection lost").
+  const shLong = async (label: string, cmd: string, sec: number) => {
+    await log(`$ ${label}`)
+    // Write the job to a script so nested quotes stay intact; nohup so it survives the short exec.
+    const prep = await exec(
+      `rm -f /tmp/aibotq-job.log /tmp/aibotq-job.exit /tmp/aibotq-job.sh; cat > /tmp/aibotq-job.sh << 'AIBOTQ_EOF'\n${cmd}\necho $? > /tmp/aibotq-job.exit\nAIBOTQ_EOF\nchmod +x /tmp/aibotq-job.sh && nohup bash /tmp/aibotq-job.sh > /tmp/aibotq-job.log 2>&1 & echo $!`,
+      30,
+    )
+    if (prep.exitCode !== 0 || !/^\d+$/.test(prep.out.trim().split('\n').pop() || '')) throw new Error(`${label} failed to start`)
+    const deadline = Date.now() + sec * 1000
+    let lastBytes = 0
+    let ticks = 0
+    while (Date.now() < deadline) {
+      await exec('sleep 15', 20)
+      ticks++
+      const poll = await exec(
+        `if [ -f /tmp/aibotq-job.exit ]; then echo DONE; cat /tmp/aibotq-job.exit; else echo RUN; free -m 2>/dev/null | awk '/^Mem:/{printf "mem %s/%s MiB", $3, $2}'; echo; wc -c < /tmp/aibotq-job.log 2>/dev/null || echo 0; fi`,
+        20,
+      )
+      const lines = poll.out.trim().split('\n').map(s => s.trim()).filter(Boolean)
+      if (lines[0] === 'DONE') {
+        const code = parseInt(lines[1] || '1', 10)
+        const out = (await exec('tail -c 8000 /tmp/aibotq-job.log 2>/dev/null', 15)).out
+        if (out.trim()) await log(out.slice(-6000))
+        if (code !== 0) throw new Error(`${label} failed (exit ${code}${code === 124 ? ', timed out' : ''})`)
+        return out
+      }
+      if (lines[0] === 'RUN') {
+        const bytes = parseInt(lines[2] || '0', 10) || 0
+        if (ticks % 2 === 1) await log(`… still running (${lines[1] || 'mem ?'}, log ${bytes} B)`)
+        if (bytes > lastBytes + 200) {
+          lastBytes = bytes
+          const crumb = (await exec('tail -c 600 /tmp/aibotq-job.log 2>/dev/null', 15)).out.trim()
+          if (crumb) await log(crumb)
+        }
+      }
+    }
+    await exec('pkill -f /tmp/aibotq-job.sh || true', 10).catch(() => {})
+    const out = (await exec('tail -c 8000 /tmp/aibotq-job.log 2>/dev/null', 15)).out
+    if (out.trim()) await log(out.slice(-6000))
+    throw new Error(`${label} failed (exit 124, timed out)`)
+  }
   try {
     if (!env.SITES) throw new Error('R2 bucket SITES is not bound')
     if (job.source.type !== 'git') throw new Error('Upload sources are not supported by the self-hosted builder yet')
@@ -51,9 +94,10 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
     const envExports = Object.entries(job.env || {}).filter(([k]) => /^[A-Z_][A-Z0-9_]*$/i.test(k)).map(([k, v]) => `export ${k}=${q(String(v))}; `).join('')
     const hasPkg = (await exec(`test -f ${q(dir + '/package.json')} && echo yes || echo no`, 10)).out.trim() === 'yes'
     let buildCmd = (job.project.build_command || '').trim()
+    let lock = ''
     if (hasPkg) {
       await step('installing')
-      const lock = (await exec(`cd ${q(dir)} && ls pnpm-lock.yaml yarn.lock package-lock.json 2>/dev/null | head -1`, 10)).out.trim()
+      lock = (await exec(`cd ${q(dir)} && ls pnpm-lock.yaml yarn.lock package-lock.json 2>/dev/null | head -1`, 10)).out.trim()
       // Log container resources so OOM/disk issues are visible in the deploy log.
       const free = (await exec('free -m 2>/dev/null | head -2; df -h / 2>/dev/null | tail -1', 10)).out.trim()
       if (free) await log(free)
@@ -68,7 +112,7 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
       } else {
         install = lock ? 'npm ci' : 'npm install'
       }
-      await sh(install, `cd ${q(dir)} && ${envExports}${install} 2>&1 | tail -80`, 900)
+      await shLong(install, `cd ${q(dir)} && ${envExports}${install}`, 900)
       if (!buildCmd) {
         const hasBuild = (await exec(`cd ${q(dir)} && node -e "process.stdout.write(require('./package.json').scripts?.build ? 'y' : 'n')"`, 10)).out === 'y'
         if (hasBuild) buildCmd = 'npm run build'
@@ -76,7 +120,18 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
     }
     if (buildCmd) {
       await step('building')
-      await sh(buildCmd, `cd ${q(dir)} && ${envExports}export CI=1 NODE_ENV=production; ${buildCmd} 2>&1 | tail -60; exit \${PIPESTATUS[0]}`, 900)
+      // Prefer the lockfile's package manager when the stored command is a generic "npm run …".
+      let run = buildCmd
+      if (lock === 'pnpm-lock.yaml' && /^npm\s+run\s+/.test(run)) run = run.replace(/^npm\s+run\s+/, 'pnpm run ')
+      else if (lock === 'yarn.lock' && /^npm\s+run\s+/.test(run)) run = run.replace(/^npm\s+run\s+/, 'yarn ')
+      const free2 = (await exec('free -m 2>/dev/null | head -2; df -h / 2>/dev/null | tail -1', 10)).out.trim()
+      if (free2) await log(free2)
+      // Cap turbo/nx parallelism so a monorepo build fits in the container.
+      await shLong(
+        run,
+        `cd ${q(dir)} && ${envExports}export CI=1 NODE_ENV=production TURBO_CONCURRENCY=2 NX_PARALLEL=2 NODE_OPTIONS=--max-old-space-size=8192; ${run}`,
+        1500,
+      )
     }
     await step('uploading')
     const outRel = rel(job.project.output_dir) || (buildCmd ? '' : '.')
@@ -110,7 +165,7 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
   } catch (e) {
     let msg = redact(e instanceof Error ? e.message : String(e))
     if (/network connection lost/i.test(msg)) {
-      msg = 'Build container disconnected mid-step (Network connection lost). Usually the container ran out of memory or disk while installing dependencies — especially on large monorepos. The builder now uses a larger instance; retry the deploy.'
+      msg = 'Build container disconnected mid-step (Network connection lost). Usually the container ran out of memory or disk during install/build (common on large monorepos), or the builder link dropped on a long step. Retry the deploy.'
     }
     await fail(msg)
   }
