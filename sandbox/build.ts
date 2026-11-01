@@ -142,7 +142,10 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
       out = `${dir}/${guess}`
     }
     const list = (await exec(`cd ${q(out)} && find . -type f -not -path './.git/*' -not -path './node_modules/*' -printf '%s %P\\n' | head -${MAX_FILES + 1}`, 30))
-    if (list.exitCode !== 0) throw new Error(`Output directory not found: ${out.replace('/build/src', '') || '/'}`)
+    if (list.exitCode !== 0) {
+      const shown = outRel || out.replace('/build/src', '') || '/'
+      throw new Error(`Output directory not found: ${shown}. Build finished, but that folder was not created — for a monorepo set Root directory to the app package and Output directory to its static export (e.g. out, dist, or .next after next export).`)
+    }
     const files = list.out.split('\n').filter(Boolean).map(l => { const i = l.indexOf(' '); return { size: +l.slice(0, i), path: l.slice(i + 1) } })
     if (!files.length) throw new Error('Build output is empty')
     if (files.length > MAX_FILES) throw new Error(`Too many output files (> ${MAX_FILES})`)
