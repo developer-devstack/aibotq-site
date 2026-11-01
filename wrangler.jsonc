@@ -37,8 +37,8 @@
     }
   ],
   "ai": { "binding": "AI" },
-  "r2_buckets": [{ "binding": "SITES", "bucket_name": "aibotq-sites" }]
-  // Folder/zip uploads need R2. Create a bucket (`wrangler r2 bucket create aibotq-uploads`) and uncomment.
-  // Without it, POST /api/upload returns a clear "upload not enabled" error.
-  // ,"r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "aibotq-uploads" }]
+  "r2_buckets": [
+    { "binding": "SITES", "bucket_name": "aibotq-sites" },
+    { "binding": "UPLOADS", "bucket_name": "aibotq-uploads" }
+  ]
 }

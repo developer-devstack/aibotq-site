@@ -1,5 +1,6 @@
 import { ApiError, decrypt, encrypt } from './lib';
 import type { Env, Provider, RepoInfo } from './types';
+import { httpsRequest } from '../utils/github-https';
 
 interface ProviderCfg {
   label: string;
@@ -77,6 +78,35 @@ export interface TokenSet {
   scope?: string;
 }
 
+function requestBodyToString(body: BodyInit | null | undefined): string | undefined {
+  if (body == null) return undefined;
+  if (typeof body === 'string') return body;
+  if (body instanceof URLSearchParams) return body.toString();
+  if (typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer) return new TextDecoder().decode(body);
+  if (ArrayBuffer.isView(body)) return new TextDecoder().decode(body as ArrayBufferView);
+  throw new ApiError(500, 'Unsupported request body for GitHub socket transport');
+}
+
+/** GitHub via cloudflare:sockets — Worker fetch() to github.com/api.github.com can return CF 525 on custom domains (workerd#7042). */
+async function githubViaSockets(url: string | URL, init: RequestInit = {}, headers: Record<string, string>): Promise<Response> {
+  const u = typeof url === 'string' ? new URL(url) : url;
+  const method = (init.method || 'GET').toUpperCase();
+  const body = requestBodyToString(init.body ?? undefined);
+  try {
+    const res = await httpsRequest({
+      hostname: u.hostname,
+      path: u.pathname + u.search,
+      method,
+      headers,
+      body,
+      timeoutMs: 30_000,
+    });
+    return new Response(res.body, { status: res.status, headers: res.headers });
+  } catch (e: any) {
+    throw new ApiError(502, `Could not reach GitHub: ${String(e?.message || e).slice(0, 120)}`);
+  }
+}
+
 async function tokenRequest(env: Env, p: Provider, params: Record<string, string>): Promise<TokenSet> {
   const c = CFG[p];
   const headers: Record<string, string> = { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'user-agent': 'aibotq-dev' };
@@ -88,8 +118,13 @@ async function tokenRequest(env: Env, p: Provider, params: Record<string, string
   }
   let res: Response;
   try {
-    res = await fetch(c.token, { method: 'POST', headers, body });
-  } catch {
+    if (p === 'github') {
+      res = await githubViaSockets(c.token, { method: 'POST', body }, headers);
+    } else {
+      res = await fetch(c.token, { method: 'POST', headers, body });
+    }
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
     throw new ApiError(502, `Could not reach ${c.label} to complete sign-in`);
   }
   const j = (await res.json().catch(() => ({}))) as Record<string, any>;
@@ -140,6 +175,8 @@ export async function api(p: Provider, token: string | null, path: string, init:
   if (p === 'github') {
     headers['x-github-api-version'] = '2022-11-28';
     if (headers.accept === 'application/json') headers.accept = 'application/vnd.github+json';
+    const url = path.startsWith('http') ? path : CFG[p].api + path;
+    return githubViaSockets(url, init, headers);
   }
   try {
     return await fetch(path.startsWith('http') ? path : CFG[p].api + path, { ...init, headers });

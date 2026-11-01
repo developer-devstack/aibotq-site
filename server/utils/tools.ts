@@ -5,6 +5,7 @@ import { hmacHex, timingSafeEqual } from '../lib/lib'
 import { dockerEnabled, dockerSandbox } from './docker-sandbox'
 import { runClairic } from './clairic'
 import { rateLimit } from '../lib/lib'
+import { httpsRequest } from './github-https'
 
 export type ToolCtx = { env: any, req: Request, admin: boolean, files: { name: string, text: string }[], images?: { name: string, dataUrl: string }[], lastUserMessage?: string, user?: { login: string, name: string | null } | null }
 // Sandbox provider: Docker Cloud Sandboxes first (billed to Docker Agentic Platform credit), Cloudflare Sandbox as fallback.
@@ -44,9 +45,29 @@ function htmlToText(s: string) {
 }
 async function gh(env: any, path: string, init: RequestInit = {}) {
   if (!env.GITHUB_ADMIN_TOKEN) throw new Error('GITHUB_ADMIN_TOKEN secret is not set on the server, so repo tools are unavailable.')
-  const r = await fetch(`https://api.github.com${path}`, { ...init, headers: { authorization: `Bearer ${env.GITHUB_ADMIN_TOKEN}`, accept: 'application/vnd.github+json', 'user-agent': 'aibotq-chat', 'x-github-api-version': '2022-11-28', ...(init.body ? { 'content-type': 'application/json' } : {}) } })
-  const j: any = r.status === 204 ? {} : await r.json().catch(() => ({}))
-  if (!r.ok) throw new Error(`GitHub ${r.status}: ${j?.message || 'error'}`)
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${env.GITHUB_ADMIN_TOKEN}`,
+    accept: 'application/vnd.github+json',
+    'user-agent': 'aibotq-chat',
+    'x-github-api-version': '2022-11-28',
+    ...(init.body ? { 'content-type': 'application/json' } : {}),
+  }
+  // Same custom-domain 525 workaround as providers.ts / OAuth.
+  let body: string | undefined
+  if (init.body != null) {
+    if (typeof init.body === 'string') body = init.body
+    else throw new Error('Unsupported GitHub request body type')
+  }
+  const res = await httpsRequest({
+    hostname: 'api.github.com',
+    path,
+    method: (init.method || 'GET').toUpperCase(),
+    headers,
+    body,
+    timeoutMs: 30_000,
+  })
+  const j: any = res.status === 204 ? {} : (() => { try { return JSON.parse(res.body) } catch { return {} } })()
+  if (res.status < 200 || res.status >= 300) throw new Error(`GitHub ${res.status}: ${j?.message || 'error'}`)
   return j
 }
 const b64 = (s: string) => btoa(String.fromCharCode(...new TextEncoder().encode(s)))
