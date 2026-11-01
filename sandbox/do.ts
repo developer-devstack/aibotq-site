@@ -3,6 +3,9 @@ import { Files } from '@cloudflare/sandbox'
 import { DurableObject } from 'cloudflare:workers'
 import { runBuild, type BuildJob } from './build'
 const IDLE_MS = 10 * 60_000
+// Builds: standard-2 = 1 vCPU / 6 GiB / 12 GB (durable_object start defaults to lite = 256 MiB).
+const BUILD_INSTANCE = 'standard-2'
+const BUILD_IDLE_MS = 60 * 60_000
 const CAP = 16_000
 const dec = (b?: Uint8Array) => b ? new TextDecoder().decode(b) : ''
 const cap = (s: string) => s.length > CAP ? s.slice(0, CAP) + `\n…[truncated ${s.length - CAP} chars]` : s
@@ -35,14 +38,24 @@ export class Sandbox extends DurableObject<any> {
     if (!job) return
     await this.ctx.storage.delete('job')
     const c = this.ctx.container!
-    if (!c.running) c.start({ image: (c as any).images.sandbox, enableInternet: true })
-    await c.setInactivityTimeout(IDLE_MS)
+    // Builds need far more than the default "lite" instance (256 MiB / 2 GB disk).
+    // A full monorepo clone + pnpm install OOMs lite and surfaces as "Network connection lost."
+    if (c.running) await c.destroy().catch(() => {})
+    c.start({
+      image: (c as any).images.sandbox,
+      enableInternet: true,
+      instance: BUILD_INSTANCE,
+    })
+    await c.setInactivityTimeout(BUILD_IDLE_MS)
     const exec = async (cmd: string, sec: number) => {
       const p = await c.exec(['timeout', '-k', '5', String(sec), 'bash', '-c', cmd], { cwd: '/' })
       const o = await p.output()
       return { exitCode: o.exitCode, out: dec(o.stdout) + dec(o.stderr) }
     }
-    await runBuild(this.env, job, exec, async (path) => (await this.files.readFile(path)).arrayBuffer())
-    await c.destroy().catch(() => {})
+    try {
+      await runBuild(this.env, job, exec, async (path) => (await this.files.readFile(path)).arrayBuffer())
+    } finally {
+      await c.destroy().catch(() => {})
+    }
   }
 }

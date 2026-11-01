@@ -54,8 +54,21 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
     if (hasPkg) {
       await step('installing')
       const lock = (await exec(`cd ${q(dir)} && ls pnpm-lock.yaml yarn.lock package-lock.json 2>/dev/null | head -1`, 10)).out.trim()
-      const install = lock === 'pnpm-lock.yaml' ? 'corepack enable && pnpm install --frozen-lockfile' : lock === 'yarn.lock' ? 'corepack enable && yarn install --frozen-lockfile' : lock ? 'npm ci' : 'npm install'
-      await sh(install, `cd ${q(dir)} && ${envExports}${install} 2>&1 | tail -40`, 600)
+      // Log container resources so OOM/disk issues are visible in the deploy log.
+      const free = (await exec('free -m 2>/dev/null | head -2; df -h / 2>/dev/null | tail -1', 10)).out.trim()
+      if (free) await log(free)
+      // Prepare the package manager before install so corepack download failures are distinct.
+      let install: string
+      if (lock === 'pnpm-lock.yaml') {
+        await sh('corepack enable (pnpm)', `cd ${q(dir)} && corepack enable && corepack prepare --activate 2>&1 | tail -20`, 180)
+        install = 'pnpm install --frozen-lockfile'
+      } else if (lock === 'yarn.lock') {
+        await sh('corepack enable (yarn)', `cd ${q(dir)} && corepack enable && corepack prepare --activate 2>&1 | tail -20`, 180)
+        install = 'yarn install --frozen-lockfile'
+      } else {
+        install = lock ? 'npm ci' : 'npm install'
+      }
+      await sh(install, `cd ${q(dir)} && ${envExports}${install} 2>&1 | tail -80`, 900)
       if (!buildCmd) {
         const hasBuild = (await exec(`cd ${q(dir)} && node -e "process.stdout.write(require('./package.json').scripts?.build ? 'y' : 'n')"`, 10)).out === 'y'
         if (hasBuild) buildCmd = 'npm run build'
@@ -95,7 +108,11 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
     if (d?.environment === 'production') await env.DB.prepare(`UPDATE projects SET status = 'live', url = ? WHERE id = ?`).bind(siteUrl, d.project_id).run()
     await log(`Live at ${siteUrl}`)
   } catch (e) {
-    await fail(redact(e instanceof Error ? e.message : String(e)))
+    let msg = redact(e instanceof Error ? e.message : String(e))
+    if (/network connection lost/i.test(msg)) {
+      msg = 'Build container disconnected mid-step (Network connection lost). Usually the container ran out of memory or disk while installing dependencies — especially on large monorepos. The builder now uses a larger instance; retry the deploy.'
+    }
+    await fail(msg)
   }
 }
 
