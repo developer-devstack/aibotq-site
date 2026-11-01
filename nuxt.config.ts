@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ['@nuxt/ui', 'nuxt-auth-utils'],
   css: ['~/assets/css/main.css'],
-  colorMode: { preference: 'dark', fallback: 'dark' },
+  colorMode: { preference: 'light', fallback: 'light' },
   // Upright weights only — never fetch an italic face.
   fonts: { defaults: { weights: [400, 500, 600, 700, 800], styles: ['normal'] } },
   // Icons are bundled into the server build so nothing is fetched from the Iconify API at runtime.
@@ -14,7 +14,7 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en' },
       charset: 'utf-8',
       viewport: 'width=device-width,initial-scale=1',
-      meta: [{ name: 'theme-color', content: '#09090b' }],
+      meta: [{ name: 'theme-color', content: '#ffffff' }],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32.png' },

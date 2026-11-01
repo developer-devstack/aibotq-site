@@ -44,12 +44,9 @@ const domainLog = `$ aibotq domains add agent.example.com
       :ui="{ container: 'py-20 sm:py-28 lg:py-32', title: 'text-5xl sm:text-7xl' }"
     >
       <template #links>
-        <div class="flex w-full items-center gap-4">
-          <div class="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <UButton label="Start deploying" to="/new/" data-track="hero_start" trailing-icon="i-lucide-arrow-right" size="xl" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
-            <UButton label="Read the docs" to="/docs/" data-track="hero_docs" color="neutral" variant="subtle" size="xl" icon="i-lucide-book-open" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
-          </div>
-          <HeroChip class="w-[130px] shrink-0 sm:w-40 lg:hidden" />
+        <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <UButton label="Start deploying" to="/new/" data-track="hero_start" trailing-icon="i-lucide-arrow-right" size="xl" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
+          <UButton label="Read the docs" to="/docs/" data-track="hero_docs" color="neutral" variant="subtle" size="xl" icon="i-lucide-book-open" class="max-w-full" :ui="{ label: 'whitespace-normal text-start' }" />
         </div>
       </template>
       <template #headline>
@@ -62,8 +59,7 @@ const domainLog = `$ aibotq domains add agent.example.com
         Import a repo, drop a folder or start from a template. Aibotq.dev builds it, puts it on the edge and gives every pull request its own preview.
       </template>
       <div>
-      <HeroChip class="hidden lg:block lg:w-80 lg:mx-auto lg:-mb-8" />
-      <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="overflow-hidden shadow-2xl shadow-black/40">
+      <UCard variant="subtle" :ui="{ body: 'p-0 sm:p-0' }" class="overflow-hidden shadow-xl shadow-zinc-900/10 ring-1 ring-default">
         <div class="flex items-center gap-1.5 px-4 py-3 border-b border-default">
           <span class="size-2.5 rounded-full bg-error" /><span class="size-2.5 rounded-full bg-warning" /><span class="size-2.5 rounded-full bg-success" />
           <span class="ms-3 text-xs text-muted font-mono">~/my-agent</span>
