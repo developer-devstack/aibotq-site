@@ -203,12 +203,6 @@ export async function projectList(c: Ctx): Promise<Response> {
   return ok({ projects });
 }
 
-export async function projectDeployments(c: Ctx, id: string): Promise<Response> {
-  await ownedProject(c, id);
-  const { results } = await c.env.DB.prepare('SELECT * FROM deployments WHERE project_id = ? ORDER BY created_at DESC LIMIT 30').bind(id).all<DeploymentRow>();
-  return ok({ deployments: await Promise.all(results.map(async (d) => deploymentPublic(await expireIfStuck(c.env, d)))) });
-}
-
 // ---------- deploy ----------
 async function appendLog(env: Env, id: string, line: string): Promise<void> {
   await env.DB.prepare('UPDATE deployments SET log = substr(log || ?, -?) WHERE id = ?').bind(line + '\n', MAX_LOG, id).run();
@@ -305,6 +299,53 @@ async function createDeployment(c: Ctx, p: ProjectRow, environment: 'production'
     .bind(id, p.id, 'queued', 'queued', `Queued ${environment} deployment.\n`, sha, environment, ref, Date.now())
     .run();
   return (await c.env.DB.prepare('SELECT * FROM deployments WHERE id = ?').bind(id).first<DeploymentRow>())!;
+}
+
+
+export async function projectDeployments(c: Ctx, id: string): Promise<Response> {
+  await ownedProject(c, id);
+  const { results } = await c.env.DB.prepare('SELECT * FROM deployments WHERE project_id = ? ORDER BY created_at DESC LIMIT 30').bind(id).all<DeploymentRow>();
+  return ok({ deployments: await Promise.all(results.map(async (d) => deploymentPublic(await expireIfStuck(c.env, d)))) });
+}
+
+export async function projectCommits(c: Ctx, id: string): Promise<Response> {
+  const p = await ownedProject(c, id);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, commit_sha, status, environment, ref, url, created_at FROM deployments WHERE project_id = ? AND commit_sha IS NOT NULL ORDER BY created_at DESC LIMIT 20`,
+  ).bind(id).all<{ id: string; commit_sha: string; status: string; environment: string; ref: string | null; url: string | null; created_at: number }>();
+
+  let remote: { sha: string; message: string; url: string; author: string | null; date: string | null }[] = [];
+  if (p.provider === 'github' && p.repo_full_name) {
+    try {
+      const token = await getToken(c.env, p.user_id, 'github');
+      const path = `/repos/${p.repo_full_name}/commits?sha=${encodeURIComponent(p.branch || 'main')}&per_page=15`;
+      const res = await api('github', token, path);
+      if (res.ok) {
+        const data = (await res.json()) as any[];
+        remote = data.map((cm) => ({
+          sha: cm.sha as string,
+          message: String(cm.commit?.message || '').split('\n')[0].slice(0, 200),
+          url: cm.html_url as string,
+          author: (cm.commit?.author?.name || cm.author?.login || null) as string | null,
+          date: (cm.commit?.author?.date || null) as string | null,
+        }));
+      }
+    } catch {
+      // Board still works from deployment rows alone.
+    }
+  }
+  return ok({
+    deployments: results.map((d) => ({
+      id: d.id,
+      sha: d.commit_sha,
+      status: d.status,
+      environment: d.environment,
+      ref: d.ref,
+      url: d.url,
+      created_at: d.created_at,
+    })),
+    commits: remote,
+  });
 }
 
 export async function projectDeploy(c: Ctx, id: string): Promise<Response> {

@@ -81,15 +81,37 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
   }
   try {
     if (!env.SITES) throw new Error('R2 bucket SITES is not bound')
-    if (job.source.type !== 'git') throw new Error('Upload sources are not supported by the self-hosted builder yet')
-    const src = job.source
-    await step('cloning')
-    let url = src.clone_url
-    if (src.token) { const u = new URL(url); u.username = 'x-access-token'; u.password = src.token; url = u.toString() }
-    await sh(`git clone --depth 1 -b ${src.branch} ${src.clone_url}`, `rm -rf /build && mkdir -p /build && git clone --depth 1 -b ${q(src.branch)} ${q(url)} /build/src 2>&1`, 120)
-    const sha = (await exec('git -C /build/src rev-parse HEAD', 10)).out.trim()
-    const count = (await exec('git -C /build/src ls-files | wc -l', 10)).out.trim()
-    if (count === '0') throw new Error('The repository has no files on this branch — push your site code first')
+    await exec('rm -rf /build && mkdir -p /build/src', 30)
+    let sha = ''
+    if (job.source.type === 'upload') {
+      await step('fetching upload')
+      const man = await sh('download manifest', `curl -fsSL ${q(job.source.manifest_url)} -o /tmp/manifest.json && echo ok`, 60)
+      // Python in the sandbox image pulls each signed file URL into /build/src.
+      const py = [
+        'import json,urllib.request,pathlib',
+        'm=json.load(open("/tmp/manifest.json"))',
+        'files=m.get("files") or []',
+        'assert files, "empty manifest"',
+        'for f in files:',
+        ' p=pathlib.Path("/build/src")/f["path"]',
+        ' p.parent.mkdir(parents=True, exist_ok=True)',
+        ' urllib.request.urlretrieve(f["url"], p)',
+        'print(f"files {len(files)}")',
+      ].join('\n')
+      await sh('download upload files', `python3 -c ${q(py)}`, 180)
+      sha = 'upload'
+      const count = (await exec('find /build/src -type f | wc -l', 10)).out.trim()
+      if (count === '0') throw new Error('Upload contained no files')
+    } else {
+      const src = job.source
+      await step('cloning')
+      let url = src.clone_url
+      if (src.token) { const u = new URL(url); u.username = 'x-access-token'; u.password = src.token; url = u.toString() }
+      await sh(`git clone --depth 1 -b ${src.branch} ${src.clone_url}`, `git clone --depth 1 -b ${q(src.branch)} ${q(url)} /build/src 2>&1`, 120)
+      sha = (await exec('git -C /build/src rev-parse HEAD', 10)).out.trim()
+      const count = (await exec('git -C /build/src ls-files | wc -l', 10)).out.trim()
+      if (count === '0') throw new Error('The repository has no files on this branch — push your site code first')
+    }
     const dir = '/build/src' + (rel(job.project.root_dir) ? '/' + rel(job.project.root_dir) : '')
     const envExports = Object.entries(job.env || {}).filter(([k]) => /^[A-Z_][A-Z0-9_]*$/i.test(k)).map(([k, v]) => `export ${k}=${q(String(v))}; `).join('')
     const hasPkg = (await exec(`test -f ${q(dir + '/package.json')} && echo yes || echo no`, 10)).out.trim() === 'yes'

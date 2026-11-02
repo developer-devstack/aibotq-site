@@ -64,34 +64,22 @@ export function templatesList(c: Ctx): Response {
 }
 
 export async function templateCreate(c: Ctx, id: string): Promise<Response> {
+  // Ban-safe: never call GitHub /generate (that creates a new repo per click).
+  // Templates are public sample repos the user imports and deploys under their own /sites/<slug>/ URL.
   const user = await requireUser(c);
-  await rateLimit(c.env, `tpl:${user.id}`, 10, 3600);
+  await rateLimit(c.env, `tpl:${user.id}`, 30, 3600);
   const tpl = parseTemplates(c.env)[id];
   if (!tpl) throw new ApiError(404, `Unknown template "${id.slice(0, 40)}"`);
-  const body = await readJson<{ name?: unknown; private?: unknown }>(c.req);
-  const name = typeof body.name === 'string' ? body.name.trim() : '';
-  if (!/^[A-Za-z0-9._-]{1,100}$/.test(name) || name === '.' || name === '..') {
-    throw new ApiError(400, 'Repository name may only contain letters, numbers, ".", "-" and "_" (max 100 chars)');
+  const token = await getToken(c.env, user.id, 'github');
+  try {
+    const repo = await getRepo('github', token, tpl);
+    return ok({ template: id, mode: 'sample', repo });
+  } catch (e) {
+    if (e instanceof ApiError && e.code === 'not_found') {
+      throw new ApiError(404, `Sample repository ${tpl} was not found on GitHub.`, 'not_found');
+    }
+    throw e;
   }
-  const token = await requireToken(c.env, user.id, 'github');
-  const { data: me } = await apiJson('github', token, '/user');
-
-  const res = await api('github', token, `/repos/${tpl}/generate`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ owner: me.login, name, private: body.private !== false, description: `Created from the ${id} template on Aibotq.dev` }),
-  });
-  if (!res.ok) {
-    const err = await providerError('github', res);
-    if (err.code === 'not_found') throw new ApiError(404, `Template repository ${tpl} was not found on GitHub, or it is not marked as a template repository.`, 'not_found');
-    if (err.code === 'unprocessable') throw new ApiError(422, `Could not create "${name}": ${err.message.replace(/^GitHub: /, '')}`);
-    throw err;
-  }
-  const r = (await res.json()) as any;
-  return ok({
-    template: id,
-    repo: { provider: 'github', full_name: r.full_name, name: r.name, private: !!r.private, default_branch: r.default_branch || 'main', html_url: r.html_url, description: r.description ?? null, updated_at: null, language: null },
-  });
 }
 
 // ---------- uploads (R2) ----------
