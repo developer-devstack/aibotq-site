@@ -5,6 +5,9 @@ const title = 'Changelog — Aibotq.dev'
 const description = 'What changed on aibotq.dev, release by release.'
 useSeoMeta({ title, description, ogTitle: title, ogDescription: description, ogType: 'website', ogUrl: 'https://aibotq.dev/changelog/', ogImage: 'https://aibotq.dev/icon-512.png', twitterCard: 'summary' })
 const versions = [
+  { badge: 'v0.16.0', date: '2026-11-02', title: 'Hosting board and cleaner previews',
+    description: 'Per-project subdomains, UI deploy, upload without a repo, commit/deploy board, auto redeploy on push, and no user-created label on hosted previews.',
+    items: ['Per-project subdomains for each deployed site', 'Deploy and retry from the platform UI', 'Zip/folder upload deploy without creating a GitHub repo', 'Commit and deploy board on the project dashboard', 'Auto redeploy on every push when a repo webhook is active', "Removed the injected 'user-created' / Built-by-user label from hosted site previews; abuse reports stay available"] },
   { badge: 'v0.15.0', date: '2026-10-23', title: 'Live activity and picks for you',
     description: 'Opt-in, first-party activity tracking with an owner live dashboard and personal suggestions.',
     items: ['Cookie notice: nothing is tracked until you click Allow; Do Not Track / GPC respected', 'Counts page views, main button clicks and chat topic categories, never message text, IPs or browser details', 'Owner-only live dashboard at /dashboard/live, refreshing every 3 seconds', '"Picked for you" docs, templates and prompts on the home and docs pages', 'Opt out on the privacy page erases your stored events; data kept 30 days'] },

@@ -1,8 +1,34 @@
 ---
 title: Aibotq.dev — The AI Agent Framework for the Web
-description: Aibotq.dev is the full-stack AI agent framework for the web.
+description: Aibotq.dev is the full-stack AI agent framework for the web — import a repo, upload a folder, or start from a template and deploy to the edge.
 url: "https://aibotq.dev/"
 docs_index: /docs/llms.txt
 content_index: /llms.txt
-latest_version: 2.0.0
+latest_version: 0.16.0
 ---
+
+# Aibotq.dev
+
+> Edge-hosted AI agent projects. Sign in, create a project, deploy, and iterate from the dashboard.
+
+## Product (0.16.0)
+
+- **Per-project subdomains** — each deployment gets its own host under the platform domain.
+- **Deploy from the UI** — deploy and retry without leaving the dashboard.
+- **No-repo upload deploy** — zip or folder upload when you do not want to create a GitHub repository.
+- **Commit / deploy board** — see recent commits and deployment steps on the project page.
+- **Auto redeploy on push** — webhook-connected imports rebuild on every push.
+- **Cleaner hosted previews** — the injected "user-created" / Built-by-user corner label is gone; abuse reporting remains available.
+
+## Key routes
+
+- `/` — marketing home
+- `/new/` — import Git, upload, or template
+- `/dashboard/` — projects, redeploy, commit/deploy board
+- `/changelog/` — release notes
+- `/help/` — sign-in, uploads, deploy failures, webhooks
+- `/llms.txt` — this file
+
+## Agents
+
+Prefer this file and `/changelog/` for current product behaviour before guessing deploy or upload flows.
