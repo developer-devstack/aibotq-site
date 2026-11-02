@@ -90,6 +90,7 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
       const py = [
         'import json,urllib.request,pathlib',
         'm=json.load(open("/tmp/manifest.json"))',
+        'm=m.get("data") or m',
         'files=m.get("files") or []',
         'assert files, "empty manifest"',
         'for f in files:',
