@@ -87,8 +87,9 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
       await step('fetching upload')
       const man = await sh('download manifest', `curl -fsSL ${q(job.source.manifest_url)} -o /tmp/manifest.json && echo ok`, 60)
       // Python in the sandbox image pulls each signed file URL into /build/src.
+      // Use curl (not Python urllib) — Cloudflare may 403 bot-like User-Agents from the sandbox.
       const py = [
-        'import json,urllib.request,pathlib',
+        'import json,pathlib,subprocess,sys',
         'm=json.load(open("/tmp/manifest.json"))',
         'm=m.get("data") or m',
         'files=m.get("files") or []',
@@ -96,7 +97,8 @@ export async function runBuild(env: any, job: BuildJob, exec: Exec, read: Read) 
         'for f in files:',
         ' p=pathlib.Path("/build/src")/f["path"]',
         ' p.parent.mkdir(parents=True, exist_ok=True)',
-        ' urllib.request.urlretrieve(f["url"], p)',
+        ' r=subprocess.run(["curl","-fsSL","-A","aibotq-builder/1","-o",str(p),f["url"]],capture_output=True,text=True)',
+        ' if r.returncode!=0: raise SystemExit(r.stderr or r.stdout or ("curl exit %s"%r.returncode))',
         'print(f"files {len(files)}")',
       ].join('\n')
       await sh('download upload files', `python3 -c ${q(py)}`, 180)
