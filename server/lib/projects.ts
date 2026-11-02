@@ -317,10 +317,12 @@ export async function projectCommits(c: Ctx, id: string): Promise<Response> {
   let remote: { sha: string; message: string; url: string; author: string | null; date: string | null }[] = [];
   if (p.provider === 'github' && p.repo_full_name) {
     try {
-      // Public repos work without a stored token (token may be expired / needs re-auth).
-      const token = (await getToken(c.env, p.user_id, 'github').catch(() => null)) || null;
+      // Prefer stored token; on failure (expired/reauth) fall back to anonymous for public repos.
+      let token: string | null = null;
+      try { token = await getToken(c.env, p.user_id, 'github'); } catch { token = null; }
       const path = `/repos/${p.repo_full_name}/commits?sha=${encodeURIComponent(p.branch || 'main')}&per_page=15`;
-      const res = await api('github', token, path);
+      let res = await api('github', token, path);
+      if (!res.ok && token) res = await api('github', null, path);
       if (res.ok) {
         const data = (await res.json()) as any[];
         remote = data.map((cm) => ({
