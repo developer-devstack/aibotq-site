@@ -317,7 +317,8 @@ export async function projectCommits(c: Ctx, id: string): Promise<Response> {
   let remote: { sha: string; message: string; url: string; author: string | null; date: string | null }[] = [];
   if (p.provider === 'github' && p.repo_full_name) {
     try {
-      const token = await getToken(c.env, p.user_id, 'github');
+      // Public repos work without a stored token (token may be expired / needs re-auth).
+      const token = (await getToken(c.env, p.user_id, 'github').catch(() => null)) || null;
       const path = `/repos/${p.repo_full_name}/commits?sha=${encodeURIComponent(p.branch || 'main')}&per_page=15`;
       const res = await api('github', token, path);
       if (res.ok) {
