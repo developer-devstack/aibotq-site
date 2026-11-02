@@ -3,7 +3,7 @@ definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: "Dashboard \u2014 Aibotq.dev", description: "Your Aibotq.dev projects and deployments.", ogTitle: "Dashboard \u2014 Aibotq.dev", ogDescription: "Your Aibotq.dev projects and deployments.", ogType: 'website', ogUrl: 'https://aibotq.dev/dashboard/', ogImage: 'https://aibotq.dev/icon-512.png', twitterCard: 'summary', robots: "noindex" })
 const toast = useToast()
 const { user, loaded, load, login } = useSession()
-const projects = ref<any[]>([]), sel = ref<string | null>(null), deps = ref<any[]>([]), depSel = ref<string | null>(null)
+const projects = ref<any[]>([]), sel = ref<string | null>(null), deps = ref<any[]>([]), depSel = ref<string | null>(null), commits = ref<any[]>([]), commitBoard = ref<any[]>([])
 const state = ref<'loading' | 'anon' | 'error' | 'ready'>('loading'), errMsg = ref(''), depsErr = ref(''), depAlert = ref(''), busy = ref(false)
 let timer: any = null
 const stopTimer = () => { clearTimeout(timer); timer = null }
@@ -40,6 +40,12 @@ async function loadDeps() {
     if (p && top) { p.latest_deployment = { ...top }; if (top.status === 'ready' && top.environment === 'production') { p.status = 'live'; p.url = top.url } }
     if (deps.value.some(x => x.status === 'queued' || x.status === 'building')) { stopTimer(); timer = setTimeout(loadDeps, 2500) }
   } catch (e: any) { if (id === sel.value) depsErr.value = e.message }
+  try {
+    const c = await aq(`/projects/${encodeURIComponent(id!)}/commits`)
+    if (id !== sel.value) return
+    commits.value = c.commits || []
+    commitBoard.value = c.deployments || []
+  } catch { /* commit board is optional */ }
 }
 async function redeploy() {
   const p = cur.value; if (!p) return
@@ -118,6 +124,17 @@ onMounted(start)
             </template>
             <UAlert v-if="safeUrl(cur.url)" color="success" variant="subtle" icon="i-lucide-radio" title="Production" :description="cur.url" class="mb-4" />
             <UAlert v-if="depAlert" color="error" variant="subtle" :title="depAlert" class="mb-4" />
+            <h3 class="font-semibold text-highlighted mb-2">Commit board</h3>
+            <p v-if="!commits.length && !commitBoard.length" class="text-sm text-muted py-4">No commits yet — deploy once or connect a GitHub repo.</p>
+            <ul v-else class="space-y-2 mb-6">
+              <li v-for="c in (commits.length ? commits : commitBoard)" :key="c.sha || c.id" class="flex items-start justify-between gap-3 rounded-lg border border-default px-3 py-2">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-highlighted truncate">{{ c.message || ((c.environment || 'deploy') + (c.ref ? ' · ' + c.ref : '')) }}</p>
+                  <p class="text-xs text-muted font-mono">{{ (c.sha || '').slice(0, 7) }}<span v-if="c.author"> · {{ c.author }}</span><span v-if="c.status"> · {{ c.status }}</span></p>
+                </div>
+                <UButton v-if="c.url" :to="c.url" target="_blank" size="xs" color="neutral" variant="ghost" icon="i-lucide-external-link" />
+              </li>
+            </ul>
             <h3 class="font-semibold text-highlighted mb-2">Deployments</h3>
             <UAlert v-if="depsErr" color="error" variant="subtle" :title="depsErr" />
             <p v-else-if="!deps.length" class="text-sm text-muted py-6 text-center">No deployments yet. Hit “Redeploy” to ship this project.</p>

@@ -13,10 +13,11 @@
     "APP_URL": "https://aibotq.dev",
     // Template key -> "owner/repo" of a GitHub *template repository* (Settings > "Template repository").
     // Replace these with real template repos; the API reports GitHub's error if one doesn't exist.
+    // Public sample repos (imported as-is — never GitHub /generate, no new repos per click).
     "TEMPLATES": {
-      "agent-app": "aibotq/template-agent-app",
-      "ai-chatbot": "aibotq/template-ai-chatbot",
-      "commerce-agent": "aibotq/template-commerce-agent"
+      "static-site": "mdn/beginner-html-site",
+      "html-css-js": "mdn/beginner-html-site",
+      "agent-app": "mdn/beginner-html-site"
     },
     "CHAT_MODEL": "anthropic/claude-haiku-5.5",
     "OWNER_GITHUB_LOGINS": "thanabartbb,examplessdk-lgtm",

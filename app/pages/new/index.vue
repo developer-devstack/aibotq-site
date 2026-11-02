@@ -137,24 +137,24 @@ async function doUpload(items: { file: File, path: string }[], rootName: string)
 
 // ---------- templates ----------
 const TPL = [
-  { id: 'agent-app', title: 'Agent App', description: 'Full-stack agent with tools & memory.', icon: 'i-lucide-bot', tag: 'TypeScript' },
-  { id: 'ai-chatbot', title: 'AI Chatbot', description: 'Streaming chat UI, any model.', icon: 'i-lucide-messages-square', tag: 'Next.js' },
-  { id: 'commerce-agent', title: 'Commerce Agent', description: 'Shop assistant over your catalog.', icon: 'i-lucide-shopping-bag', tag: 'RAG' },
+  { id: 'static-site', title: 'Static Site', description: 'Plain HTML starter — deploys in seconds.', icon: 'i-lucide-file-code-2', tag: 'HTML' },
+  { id: 'html-css-js', title: 'HTML + CSS + JS', description: 'Classic three-file beginner site.', icon: 'i-lucide-panels-top-left', tag: 'Static' },
+  { id: 'agent-app', title: 'Sample App', description: 'Public sample you deploy under your own URL.', icon: 'i-lucide-sparkles', tag: 'Sample' },
 ]
 const templates = ref<Record<string, string>>({}), tplLoaded = ref(false)
-const tplOpen = ref<string | null>(null), tplName = ref(''), tplPrivate = ref(true), tplBusy = ref(false), tplError = ref('')
+const tplOpen = ref<string | null>(null), tplBusy = ref(false), tplError = ref('')
 async function loadTemplates() { try { const d = await aq('/templates'); d.templates.forEach((t: any) => (templates.value[t.id] = t.repo)) } catch {} finally { tplLoaded.value = true } }
 function openTemplate(id: string) {
   track('click', { target: 'tpl_' + id })
-  if (!user.value) return needAuth('create a repository from a template')
-  tplOpen.value = id; tplName.value = id; tplError.value = ''
-  if (tplLoaded.value && !templates.value[id]) tplError.value = `The "${id}" template is not configured on this server (missing from the TEMPLATES variable).`
+  if (!user.value) return needAuth('start from a sample')
+  tplOpen.value = id; tplError.value = ''
+  if (tplLoaded.value && !templates.value[id]) tplError.value = `The "${id}" sample is not configured on this server (missing from the TEMPLATES variable).`
 }
 async function createFromTemplate() {
   tplBusy.value = true; tplError.value = ''
   try {
-    const d = await aq(`/templates/${encodeURIComponent(tplOpen.value!)}/create`, { method: 'POST', body: { name: tplName.value.trim(), private: tplPrivate.value } })
-    toast.add({ color: 'success', title: `Created ${d.repo.full_name}` }); tplOpen.value = null
+    const d = await aq(`/templates/${encodeURIComponent(tplOpen.value!)}/create`, { method: 'POST', body: {} })
+    toast.add({ color: 'success', title: `Using sample ${d.repo.full_name}` }); tplOpen.value = null
     chooseSource('template', d.repo)
   } catch (e: any) { tplError.value = e.message } finally { tplBusy.value = false }
 }
@@ -412,8 +412,8 @@ onMounted(async () => {
 
       <div class="lg:col-span-2 space-y-4">
         <div>
-          <h2 class="font-semibold text-highlighted text-lg">Start from a template</h2>
-          <p class="text-sm text-muted">Cloned into your GitHub, deployed in one go.</p>
+          <h2 class="font-semibold text-highlighted text-lg">Start from a sample</h2>
+          <p class="text-sm text-muted">Uses a public sample repo — no new GitHub repository is created. You get your own live URL.</p>
         </div>
         <UPageCard
           v-for="t in TPL" :key="t.id" :title="t.title" :description="t.description" :icon="t.icon" orientation="horizontal"
@@ -424,13 +424,11 @@ onMounted(async () => {
         </UPageCard>
         <UCard v-if="tplOpen" variant="subtle">
           <form class="space-y-4" @submit.prevent="createFromTemplate">
-            <p class="font-semibold text-highlighted">Create from {{ TPL.find(t => t.id === tplOpen)?.title || tplOpen }}</p>
-            <p v-if="templates[tplOpen]" class="text-sm text-muted">Copies <b class="text-highlighted">{{ templates[tplOpen] }}</b> into your GitHub account.</p>
-            <UFormField label="New repository name"><UInput v-model="tplName" class="w-full" maxlength="100" /></UFormField>
-            <UCheckbox v-model="tplPrivate" label="Private repository" />
+            <p class="font-semibold text-highlighted">Use sample · {{ TPL.find(t => t.id === tplOpen)?.title || tplOpen }}</p>
+            <p v-if="templates[tplOpen]" class="text-sm text-muted">Deploys from <b class="text-highlighted">{{ templates[tplOpen] }}</b> under your own <code class="text-xs">/sites/…</code> URL. Nothing is forked or created on GitHub.</p>
             <UAlert v-if="tplError" color="error" variant="subtle" :title="tplError" />
             <div class="flex gap-2">
-              <UButton type="submit" label="Create repository" trailing-icon="i-lucide-arrow-right" :loading="tplBusy" :disabled="!templates[tplOpen]" />
+              <UButton type="submit" label="Use this sample" trailing-icon="i-lucide-arrow-right" :loading="tplBusy" :disabled="!templates[tplOpen]" />
               <UButton label="Cancel" color="neutral" variant="ghost" @click="tplOpen = null" />
             </div>
           </form>
